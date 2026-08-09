@@ -5,7 +5,7 @@ namespace VibeShoot.Controllers
 {
     public class GalleryController : Controller
     {
-        public IActionResult Index()
+        public IActionResult Gallery()
         {
             return View();
         }

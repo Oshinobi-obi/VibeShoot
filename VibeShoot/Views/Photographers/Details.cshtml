@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Photographers";
+    ViewData["Title"] = "Choose Your Photographer";
     Layout = "_Layout";
 }
 
@@ -142,6 +142,25 @@
     @@keyframes vs-irisOpen {
         to {
             clip-path: circle(0% at 50% 50%);
+        }
+    }
+
+    .vs-iris {
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        background: #000;
+        clip-path: circle(0% at 50% 50%);
+        pointer-events: none;
+    }
+
+        .vs-iris.vs-iris-closing {
+            animation: vs-irisClose 0.9s cubic-bezier(.6,0,.2,1) forwards;
+        }
+
+    @@keyframes vs-irisClose {
+        to {
+            clip-path: circle(150% at 50% 50%);
         }
     }
 
@@ -330,9 +349,9 @@
         <div class="vs-photog-grid">
 
             <a class="vs-photog-card"
-               href="@Url.Action("Index", "Book", new { photographer = "sulyap-films" })"
+               href="@Url.Action("AboutMe", "About", new { photographer = "sulyap-films" })"
                style="animation-delay:2s"
-               aria-label="Book Sulyap Films">
+               aria-label="View Sulyap Films">
                 <span class="vs-photog-ring">
                     <img src="~/Logos/SulyapFilms.png" alt="Sulyap Films logo" />
                 </span>
@@ -340,9 +359,9 @@
             </a>
 
             <a class="vs-photog-card"
-               href="@Url.Action("Index", "Book", new { photographer = "ginger-snaps" })"
+               href="@Url.Action("AboutMe", "About", new { photographer = "ginger-snaps" })"
                style="animation-delay:2.5s"
-               aria-label="Book Ginger Snaps Photography">
+               aria-label="View Ginger Snaps Photography">
                 <span class="vs-photog-ring">
                     <img src="~/Logos/GingerSnaps.png" alt="Ginger Snaps Photography logo" />
                 </span>
@@ -350,9 +369,9 @@
             </a>
 
             <a class="vs-photog-card"
-               href="@Url.Action("Index", "Book", new { photographer = "chiyos-folder" })"
+               href="@Url.Action("AboutMe", "About", new { photographer = "chiyos-folder" })"
                style="animation-delay:3s"
-               aria-label="Book Chiyos Folder">
+               aria-label="View Chiyos Folder">
                 <span class="vs-photog-ring">
                     <img src="~/Logos/ChiyosFolder.png" alt="Chiyos Folder logo" />
                 </span>
@@ -361,3 +380,33 @@
         </div>
     </div>
 </div>
+
+<div class="vs-iris" id="visIris" aria-hidden="true"></div>
+
+<script>
+    (function () {
+        var iris = document.getElementById('visIris');
+        var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var CLOSE_MS = 900;
+        var cards = document.querySelectorAll('.vs-photog-card');
+
+        cards.forEach(function (card) {
+            card.addEventListener('click', function (e) {
+                var href = card.getAttribute('href');
+                if (!href) { return; }
+
+                e.preventDefault();
+
+                if (reduceMotion) {
+                    window.location.href = href;
+                    return;
+                }
+
+                iris.classList.add('vs-iris-closing');
+                setTimeout(function () {
+                    window.location.href = href;
+                }, CLOSE_MS);
+            });
+        });
+    })();
+</script>

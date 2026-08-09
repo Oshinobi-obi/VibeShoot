@@ -4,7 +4,7 @@ namespace VibeShoot.Controllers
 {
     public class BookController : Controller
     {
-        public IActionResult Index()
+        public IActionResult Book()
         {
             return View();
         }
