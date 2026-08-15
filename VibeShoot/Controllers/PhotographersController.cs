@@ -4,9 +4,10 @@ namespace VibeShoot.Controllers
 {
     public class PhotographersController : Controller
     {
+        [HttpGet("photographers")]
         public IActionResult Details()
         {
-            return View();
+            return View("~/Views/Photographers/Details.cshtml");
         }
     }
 }

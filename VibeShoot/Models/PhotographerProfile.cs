@@ -9,5 +9,6 @@ namespace VibeShoot.Models
         public string FacebookUrl { get; set; } = "#";
         public string InstagramUrl { get; set; } = "#";
         public string TikTokUrl { get; set; } = "#";
+        public string XUrl { get; set; } = "#";
     }
 }

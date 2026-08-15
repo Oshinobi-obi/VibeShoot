@@ -3,332 +3,10 @@
     Layout = "_Layout";
 }
 
-<style>
-    @@import url('https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500&display=swap');
-
-    :root {
-        --bg-0: #0a0a0c;
-        --bg-1: #161619;
-        --bokeh-gold: 201,162,39;
-        --bokeh-blue: 58,90,120;
-        --white: #f5f5f2;
-    }
-
-    .vs-page {
-        position: fixed;
-        inset: 0;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-        background: radial-gradient(ellipse at 50% 30%, var(--bg-1) 0%, var(--bg-0) 70%);
-        font-family: 'Poppins', sans-serif;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1;
-    }
-
-    .vs-bg-layer {
-        position: absolute;
-        inset: 0;
-        z-index: 0;
-        overflow: hidden;
-    }
-
-    .vs-bokeh {
-        position: absolute;
-        border-radius: 50%;
-        filter: blur(2px);
-        opacity: 0.5;
-        mix-blend-mode: screen;
-        animation: vs-drift linear infinite;
-    }
-
-        .vs-bokeh.blur {
-            filter: blur(6px);
-        }
-
-        .vs-bokeh:nth-child(1) {
-            width: 200px;
-            height: 200px;
-            left: 10%;
-            top: 75%;
-            background: radial-gradient(circle, rgba(var(--bokeh-gold),0.85), rgba(var(--bokeh-gold),0) 70%);
-            animation-duration: 28s;
-        }
-
-        .vs-bokeh:nth-child(2) {
-            width: 110px;
-            height: 110px;
-            left: 82%;
-            top: 18%;
-            background: radial-gradient(circle, rgba(var(--bokeh-blue),0.85), rgba(var(--bokeh-blue),0) 70%);
-            animation-duration: 21s;
-            animation-delay: -4s;
-        }
-
-        .vs-bokeh:nth-child(3) {
-            width: 70px;
-            height: 70px;
-            left: 20%;
-            top: 12%;
-            background: radial-gradient(circle, rgba(255,255,255,0.55), rgba(255,255,255,0) 70%);
-            animation-duration: 16s;
-            animation-delay: -6s;
-        }
-
-    @@keyframes vs-drift {
-        0% {
-            transform: translate3d(0,0,0) scale(1);
-        }
-
-        50% {
-            transform: translate3d(2vw,-4vh,0) scale(1.08);
-        }
-
-        100% {
-            transform: translate3d(0,0,0) scale(1);
-        }
-    }
-
-    .vs-grain {
-        position: absolute;
-        inset: -50%;
-        width: 200%;
-        height: 200%;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
-        opacity: 0.05;
-        animation: vs-grainMove 1s steps(4) infinite;
-        z-index: 2;
-        pointer-events: none;
-    }
-
-    @@keyframes vs-grainMove {
-        0%, 100% {
-            transform: translate(0,0);
-        }
-
-        25% {
-            transform: translate(-2%,-1%);
-        }
-
-        50% {
-            transform: translate(1%,2%);
-        }
-
-        75% {
-            transform: translate(-1%,1%);
-        }
-    }
-
-    .vs-vignette {
-        position: absolute;
-        inset: 0;
-        z-index: 3;
-        pointer-events: none;
-        background: radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(0,0,0,0.75) 100%);
-    }
-
-    .vs-iris-in {
-        position: fixed;
-        inset: 0;
-        z-index: 999;
-        background: #000;
-        clip-path: circle(150% at 50% 50%);
-        pointer-events: none;
-        animation: vs-irisOpen 0.9s cubic-bezier(.2,.8,.2,1) forwards;
-    }
-
-    @@keyframes vs-irisOpen {
-        to {
-            clip-path: circle(0% at 50% 50%);
-        }
-    }
-
-    .vs-iris {
-        position: fixed;
-        inset: 0;
-        z-index: 999;
-        background: #000;
-        clip-path: circle(0% at 50% 50%);
-        pointer-events: none;
-    }
-
-        .vs-iris.vs-iris-closing {
-            animation: vs-irisClose 0.9s cubic-bezier(.6,0,.2,1) forwards;
-        }
-
-    @@keyframes vs-irisClose {
-        to {
-            clip-path: circle(150% at 50% 50%);
-        }
-    }
-
-    .vs-select-content {
-        position: relative;
-        z-index: 5;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        padding: 4vh 5vw;
-        max-width: 1000px;
-    }
-
-    .vs-brandmark {
-        font-family: 'Poppins',sans-serif;
-        font-size: 11px;
-        letter-spacing: 0.35em;
-        text-transform: uppercase;
-        color: rgba(245,245,242,0.45);
-        opacity: 0;
-        animation: vs-fadeSimple 0.8s ease forwards;
-        animation-delay: 0.9s;
-    }
-
-    .vs-select-title {
-        font-family: 'Anton', sans-serif;
-        font-weight: 400;
-        font-size: clamp(1.9rem, 5.2vw, 3.4rem);
-        color: var(--white);
-        margin: 0.6rem 0 0.4rem;
-        letter-spacing: 0.01em;
-        opacity: 0;
-        transform: translateY(24px);
-        animation: vs-fadeUp 0.7s cubic-bezier(.16,.9,.2,1) forwards;
-        animation-delay: 1.05s;
-    }
-
-    .vs-select-sub {
-        font-family: 'Poppins', sans-serif;
-        font-weight: 300;
-        font-size: clamp(0.85rem, 1.6vw, 1.1rem);
-        color: rgba(245,245,242,0.7);
-        margin-bottom: clamp(2.2rem, 5vh, 3.5rem);
-        opacity: 0;
-        transform: translateY(18px);
-        animation: vs-fadeUp 0.7s ease forwards;
-        animation-delay: 1.3s;
-    }
-
-    @@keyframes vs-fadeUp {
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @@keyframes vs-fadeSimple {
-        to {
-            opacity: 1;
-        }
-    }
-
-    .vs-photog-grid {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: flex-start;
-        justify-content: center;
-        gap: clamp(1.8rem, 4vw, 3.2rem);
-    }
-
-    .vs-photog-card {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 14px;
-        text-decoration: none;
-        width: 180px;
-        opacity: 0;
-        transform: translateY(30px);
-        animation: vs-cardIn 0.75s cubic-bezier(.16,.9,.2,1) forwards;
-        cursor: pointer;
-    }
-
-    @@keyframes vs-cardIn {
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .vs-photog-ring {
-        width: 170px;
-        height: 170px;
-        border-radius: 50%;
-        background: radial-gradient(circle at 35% 30%, #fdfdfb, #e9e9e6 70%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 22px;
-        border: 2px solid rgba(245,245,242,0.3);
-        box-shadow: 0 0 0 6px rgba(0,0,0,0.28), 0 18px 34px rgba(0,0,0,0.5);
-        transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease, border-color .35s ease;
-    }
-
-        .vs-photog-ring img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-    .vs-photog-card:hover .vs-photog-ring,
-    .vs-photog-card:focus-visible .vs-photog-ring {
-        transform: translateY(-8px) scale(1.05);
-        border-color: rgba(201,162,39,0.85);
-        box-shadow: 0 0 0 6px rgba(201,162,39,0.2), 0 22px 40px rgba(0,0,0,0.55);
-    }
-
-    .vs-photog-card:active .vs-photog-ring {
-        transform: scale(0.96);
-    }
-
-    .vs-photog-card:focus-visible {
-        outline: none;
-    }
-
-    .vs-photog-name {
-        font-family: 'Poppins',sans-serif;
-        font-weight: 500;
-        font-size: 0.95rem;
-        color: rgba(245,245,242,0.92);
-        letter-spacing: 0.02em;
-        transition: color .3s ease;
-    }
-
-    .vs-photog-card:hover .vs-photog-name,
-    .vs-photog-card:focus-visible .vs-photog-name {
-        color: rgb(var(--bokeh-gold));
-    }
-
-    @@media (prefers-reduced-motion: reduce) {
-        .vs-iris-in {
-            display: none;
-        }
-
-        .vs-bokeh, .vs-grain {
-            animation: none !important;
-        }
-
-        .vs-select-title, .vs-select-sub, .vs-brandmark, .vs-photog-card {
-            animation: none !important;
-            opacity: 1 !important;
-            transform: none !important;
-        }
-    }
-
-    @@media (max-width:480px) {
-        .vs-photog-ring {
-            width: 130px;
-            height: 130px;
-            padding: 16px;
-        }
-
-        .vs-photog-card {
-            width: 130px;
-        }
-    }
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="~/css/Details.css" asp-append-version="true" />
 
 <div class="vs-iris-in" aria-hidden="true"></div>
 
@@ -347,33 +25,32 @@
         <p class="vs-select-sub">Pick the eye behind the lens for your shoot.</p>
 
         <div class="vs-photog-grid">
-
             <a class="vs-photog-card"
-               href="@Url.Action("AboutMe", "About", new { photographer = "sulyap-films" })"
+               href="/photographer/sulyap-films/about"
                style="animation-delay:2s"
                aria-label="View Sulyap Films">
                 <span class="vs-photog-ring">
-                    <img src="~/Logos/SulyapFilms.png" alt="Sulyap Films logo" />
+                    <img src="~/Uploads/Logos/SulyapFilms/SulyapFilms.png" alt="Sulyap Films logo" />
                 </span>
                 <span class="vs-photog-name">Sulyap Films</span>
             </a>
 
             <a class="vs-photog-card"
-               href="@Url.Action("AboutMe", "About", new { photographer = "ginger-snaps" })"
+               href="/photographer/ginger-snaps/about"
                style="animation-delay:2.5s"
                aria-label="View Ginger Snaps Photography">
                 <span class="vs-photog-ring">
-                    <img src="~/Logos/GingerSnaps.png" alt="Ginger Snaps Photography logo" />
+                    <img src="~/Uploads/Logos/GingerSnaps/GingerSnaps.png" alt="Ginger Snaps Photography logo" />
                 </span>
                 <span class="vs-photog-name">Ginger Snaps Photography</span>
             </a>
 
             <a class="vs-photog-card"
-               href="@Url.Action("AboutMe", "About", new { photographer = "chiyos-folder" })"
+               href="/photographer/chiyos-folder/about"
                style="animation-delay:3s"
                aria-label="View Chiyos Folder">
                 <span class="vs-photog-ring">
-                    <img src="~/Logos/ChiyosFolder.png" alt="Chiyos Folder logo" />
+                    <img src="~/Uploads/Logos/ChiyosFolder/ChiyosFolder.png" alt="Chiyos Folder logo" />
                 </span>
                 <span class="vs-photog-name">Chiyos Folder</span>
             </a>
@@ -383,30 +60,6 @@
 
 <div class="vs-iris" id="visIris" aria-hidden="true"></div>
 
-<script>
-    (function () {
-        var iris = document.getElementById('visIris');
-        var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        var CLOSE_MS = 900;
-        var cards = document.querySelectorAll('.vs-photog-card');
-
-        cards.forEach(function (card) {
-            card.addEventListener('click', function (e) {
-                var href = card.getAttribute('href');
-                if (!href) { return; }
-
-                e.preventDefault();
-
-                if (reduceMotion) {
-                    window.location.href = href;
-                    return;
-                }
-
-                iris.classList.add('vs-iris-closing');
-                setTimeout(function () {
-                    window.location.href = href;
-                }, CLOSE_MS);
-            });
-        });
-    })();
-</script>
+@section Scripts {
+    <script src="~/js/Details.js" asp-append-version="true"></script>
+}

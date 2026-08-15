@@ -1,13 +1,232 @@
-﻿<!DOCTYPE html>
+﻿@model VibeShoot.Models.PhotographerProfile
+@{
+    ViewData["Title"] = "Schedule & Booking";
+    Layout = "_Layout";
+}
 
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>@ViewBag.Title</title>
-</head>
-<body>
-    <div>
-        @RenderBody()
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="~/css/Book.css" asp-append-version="true" />
+
+<div class="vs-iris-in" aria-hidden="true"></div>
+
+<partial name="_PhotographerNav" model="@(new VibeShoot.Models.NavContext { Slug = Model?.Slug ?? "ginger-snaps", ActiveTab = "Schedule" })" />
+
+<div class="vs-page">
+    <div class="vs-bg-layer">
+        <div class="vs-bokeh"></div>
+        <div class="vs-bokeh blur"></div>
+        <div class="vs-bokeh"></div>
     </div>
-</body>
-</html>
+    <div class="vs-grain"></div>
+    <div class="vs-vignette"></div>
+
+    <div class="vs-schedule-wrap">
+        <h1 class="vs-title">Book a Session</h1>
+        <p class="vs-subtitle">Select an available date below to request a shoot.</p>
+
+        <div class="vs-calendar">
+            <div class="vs-calendar-header">
+                <button class="vs-calendar-btn" id="prevMonth" aria-label="Previous Month">
+                    <svg viewBox="0 0 24 24"><path d="M14.7 5.3 8 12l6.7 6.7 1.4-1.4L10.8 12l5.3-5.3z" /></svg>
+                </button>
+                <div class="vs-month-year" id="monthYearDisplay">Month Year</div>
+                <button class="vs-calendar-btn" id="nextMonth" aria-label="Next Month">
+                    <svg viewBox="0 0 24 24"><path d="M9.3 5.3 16 12l-6.7 6.7-1.4-1.4L13.2 12 7.9 6.7z" /></svg>
+                </button>
+            </div>
+            <div class="vs-days-grid" id="calendarGrid"></div>
+        </div>
+    </div>
+</div>
+
+<div class="vs-modal" id="bookingModal">
+    <div class="vs-modal-content">
+        <button class="vs-modal-close" id="closeModal">&times;</button>
+        <h2 class="vs-form-title">Booking Request</h2>
+        <div class="vs-form-date" id="selectedDateDisplay">Target Date: ---</div>
+
+        <form id="bookingForm" action="/photographer/@(Model?.Slug ?? "ginger-snaps")/schedule" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="photographer" value="@(Model?.Slug ?? "ginger-snaps")" />
+            <input type="hidden" id="selectedDateInput" name="Date" />
+            <input type="hidden" id="formTxId" name="TransactionId" />
+            <input type="hidden" id="formAmountPaid" name="AmountPaid" />
+
+            <div class="vs-form-group">
+                <label>Full Name</label>
+                <input type="text" autocomplete="off" name="FullName" id="inputFullName" required placeholder="Juan Dela Cruz" />
+            </div>
+
+            <div class="vs-form-group">
+                <label>Contact Number</label>
+                <input type="tel" autocomplete="off" name="ContactNumber" id="contactNumberInput" required placeholder="09XX-XXX-XXXX" maxlength="13" />
+            </div>
+
+            <div class="vs-form-group">
+                <label>Facebook / Messenger Link</label>
+                <input type="url" autocomplete="off" name="SocialLink" placeholder="https://facebook.com/yourprofile" />
+            </div>
+
+            <div class="vs-form-group">
+                <label>Venue / Location</label>
+                <input type="text" autocomplete="off" name="Venue" id="inputVenue" required placeholder="Event location" />
+            </div>
+
+            <div class="vs-form-group">
+                <label>Category</label>
+                <select id="categorySelect" name="Category" required>
+                    <option value="" disabled selected>Select an Event Category</option>
+                    <option value="Birthday">Birthday</option>
+                    <option value="Baptism">Baptism</option>
+                    <option value="Photoshoot">Photoshoot</option>
+                    <option value="Wedding">Wedding</option>
+                </select>
+            </div>
+
+            <div class="vs-form-group" id="packagesWrapper" style="display:none;">
+                <label>Select Package</label>
+                <div class="vs-packages-container" id="packagesContainer">
+                </div>
+            </div>
+
+            <div class="vs-tc-group">
+                <input type="checkbox" id="tcCheckbox" required />
+                <label for="tcCheckbox">I agree to the <a href="#" id="openTcModal">Terms and Conditions</a> *</label>
+            </div>
+
+            <input type="file" id="formReceiptFile" name="ReceiptImage" style="display:none;" />
+
+            <button type="submit" class="vs-submit-btn" id="submitBtn" disabled>Confirm Booking</button>
+        </form>
+    </div>
+</div>
+
+<div class="vs-modal" id="tcModal">
+    <div class="vs-modal-content">
+        <h2 class="vs-form-title" style="text-align: center;">Terms & Conditions</h2>
+        <div class="vs-tc-body">
+            <h4>Payment Terms</h4>
+            <ul>
+                <li>Down Payment: 50% (non-refundable) due upon booking.</li>
+                <li>Balance: Due on or before the event date / after the session.</li>
+                <li>Payment Method: GCash for down payment, can be Cash or GCash for the remaining balance.</li>
+            </ul>
+            <h4>Cancellation Policy</h4>
+            <ul>
+                <li>If the Client cancels the booking, the down payment is non-refundable.</li>
+                <li>If the Photographer cancels, all payments will be refunded.</li>
+            </ul>
+            <h4>Rescheduling</h4>
+            <ul>
+                <li>Client may request to reschedule the event at least 10 days before the scheduled date.</li>
+                <li>Photographer will accommodate subject to availability.</li>
+            </ul>
+            <h4>Copyright & Usage Rights</h4>
+            <ul>
+                <li>The Photographer retains the copyright to all photos.</li>
+                <li>The Client is granted personal use rights (printing, sharing online, etc.).</li>
+                <li>For commercial use (ads, promotions, real estate listings, etc.), an additional fee applies.</li>
+            </ul>
+            <h4>Liability</h4>
+            <ul>
+                <li>Photographer is not responsible for circumstances beyond control (e.g., bad weather, venue restrictions, accidents).</li>
+                <li>If equipment failure or unforeseen issues prevent photo delivery, liability is limited to a refund of payments received.</li>
+            </ul>
+            <h4>Additional Charges & Client Responsibilities</h4>
+            <ul>
+                <li>Kindly note that food and transportation for the team will be covered by the client.</li>
+                <li>If we go beyond the package's time limit, an additional ₱500 for (photo only) & ₱1000 (with video) per hour will be added.</li>
+            </ul>
+            <p class="vs-tc-closing">
+                Booking your session confirms that you've read and accepted the terms listed above.<br />
+                Thank you so much, we are excited to capture moments with you!
+            </p>
+        </div>
+        <div class="vs-tc-actions">
+            <button type="button" class="vs-btn-decline" id="btnDecline">Decline</button>
+            <button type="button" class="vs-btn-agree" id="btnAgree">I Agree</button>
+        </div>
+    </div>
+</div>
+
+<div class="vs-modal" id="paymentNotifModal">
+    <div class="vs-modal-content" style="text-align: center; max-width: 450px;">
+        <h2 class="vs-form-title" style="color: rgb(201,162,39);">Booking Confirmation!</h2>
+        <p style="color: rgba(245,245,242,0.8); margin: 20px 0; font-size: 0.95rem; line-height: 1.6;">
+            A 50% Downpayment must be made upon securing a schedule with the Photographer.
+        </p>
+        <button type="button" class="vs-submit-btn" id="btnProceedToQr">Proceed to Payment</button>
+    </div>
+</div>
+
+<div class="vs-modal" id="qrModal">
+    <div class="vs-modal-content" style="text-align: center; max-width: 420px;">
+        <h2 class="vs-form-title">GCash Payment</h2>
+        <p style="color: rgba(245,245,242,0.8); font-size: 0.9rem; margin-bottom: 5px;">Scan the QR code below to pay the 50% downpayment.</p>
+
+        <p style="color: rgba(245,245,242,0.6); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0;">Amount to Pay</p>
+        <h3 id="qrAmountDisplay" style="color: rgb(201,162,39); font-family: 'Anton', sans-serif; font-size: 2.2rem; margin-top: 0; margin-bottom: 15px; letter-spacing: 0.05em;"></h3>
+
+        <div style="background: white; padding: 15px; border-radius: 12px; margin: 0 auto 20px; width: fit-content;">
+            <img id="gcashQrImage" src="" alt="Photographer GCash QR" style="width: 200px; height: 200px; object-fit: contain;" />
+        </div>
+
+        <p id="qrTimerText" style="color: rgb(201,162,39); font-weight: 500; font-size: 0.95rem; margin-bottom: 15px;">
+            Please wait <span id="qrTime">5</span> seconds...
+        </p>
+
+        <button type="button" class="vs-submit-btn" id="btnAlreadyPaid" style="display: none;">Already Paid?</button>
+    </div>
+</div>
+
+<div class="vs-modal" id="uploadModal">
+    <div class="vs-modal-content" style="text-align: center; max-width: 420px;">
+        <h2 class="vs-form-title">Upload Receipt</h2>
+        <p style="color: rgba(245,245,242,0.8); margin-bottom: 25px; font-size: 0.9rem;">Please upload the GCash Receipt here to verify your booking.</p>
+
+        <div class="vs-form-group">
+            <input type="file" id="receiptFile" accept="image/*" required style="background: rgba(255,255,255,0.05); padding: 15px; cursor: pointer;" />
+        </div>
+
+        <button type="button" class="vs-submit-btn" id="btnSubmitReceipt" style="margin-top: 10px;">Submit Receipt</button>
+    </div>
+</div>
+
+<div class="vs-modal" id="receiptModal">
+    <div class="vs-modal-content" style="max-width: 480px; padding: 25px;">
+
+        <div id="receiptContent" style="background: #0a0a0c; background-image: radial-gradient(ellipse at 50% 30%, #161619 0%, #0a0a0c 70%); color: #f5f5f2; padding: 50px 30px 70px 30px; border-radius: 12px; text-align: left; font-family: 'Poppins', sans-serif; border: 1px solid rgba(201,162,39,0.3); position: relative; overflow: hidden; box-sizing: border-box;">
+
+            <div style="position: absolute; width: 150px; height: 150px; background: radial-gradient(circle, rgba(201,162,39,0.15), transparent 70%); top: -20px; left: -20px; border-radius: 50%;"></div>
+            <div style="position: absolute; width: 100px; height: 100px; background: radial-gradient(circle, rgba(58,90,120,0.15), transparent 70%); bottom: 20px; right: -20px; border-radius: 50%;"></div>
+
+            <div style="position: relative; z-index: 2;">
+                <h2 style="font-family: 'Anton', sans-serif; text-align: center; margin: 0 0 30px 0; line-height: 1; font-size: 2.5rem; letter-spacing: 0.08em; color: rgb(201,162,39);">VIBESHOOT</h2>
+
+                <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Transaction ID:</strong> <span id="recTxId" style="font-weight: 500;"></span></p>
+                <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Client Name:</strong> <span id="recName" style="font-weight: 500;"></span></p>
+                <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Venue:</strong> <span id="recVenue" style="font-weight: 500;"></span></p>
+                <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Category:</strong> <span id="recCategory" style="font-weight: 500;"></span></p>
+                <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Package Type:</strong> <span id="recPackage" style="font-weight: 500;"></span></p>
+
+                <hr style="border: none; border-top: 1px solid rgba(245,245,242,0.15); margin: 25px 0;" />
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: rgba(245,245,242,0.8); text-transform: uppercase; font-size: 0.9rem; letter-spacing: 0.1em;">Amount Paid (50%)</span>
+                    <span id="recAmount" style="color: rgb(201,162,39); font-weight: 600; font-size: 1.4rem; font-family: 'Anton', sans-serif; letter-spacing: 0.05em;"></span>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="vs-submit-btn" id="btnDownloadReceipt" style="margin-top: 25px;">Download Receipt</button>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.currentPhotographerSlug = '@(Model?.Slug ?? "ginger-snaps")';
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="~/js/Book.js" asp-append-version="true"></script>
+}

@@ -1,128 +1,19 @@
 @model VibeShoot.Models.NavContext
 
-<style>
-    .vs-navbar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 50;
-        height: 76px;
-        display: grid;
-        grid-template-columns: 1fr auto 1fr;
-        align-items: center;
-        padding: 0 5vw;
-        background: linear-gradient(to bottom, rgba(10,10,12,0.85) 0%, rgba(10,10,12,0.35) 80%, rgba(10,10,12,0) 100%);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-        opacity: 0;
-        transform: translateY(-16px);
-        animation: vs-navIn 0.7s cubic-bezier(.2,.8,.2,1) forwards;
-        animation-delay: 0.25s;
-    }
-
-    @@keyframes vs-navIn {
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .vs-nav-brand {
-        font-family: 'Poppins', sans-serif;
-        font-size: 12px;
-        letter-spacing: 0.3em;
-        text-transform: uppercase;
-        color: rgba(245,245,242,0.55);
-        text-decoration: none;
-        justify-self: start;
-    }
-
-    .vs-nav-links {
-        display: flex;
-        align-items: center;
-        gap: clamp(1.6rem, 4vw, 3.4rem);
-        justify-self: center;
-    }
-
-    .vs-nav-link {
-        position: relative;
-        font-family: 'Poppins', sans-serif;
-        font-weight: 500;
-        font-size: 0.85rem;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        color: rgba(245,245,242,0.72);
-        text-decoration: none;
-        padding-bottom: 6px;
-    }
-
-        .vs-nav-link::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: 2px;
-            background: rgb(201,162,39);
-            transform: scaleX(0);
-            transform-origin: center;
-            transition: transform .3s ease;
-        }
-
-        .vs-nav-link:hover,
-        .vs-nav-link:focus-visible {
-            color: var(--white, #f5f5f2);
-        }
-
-            .vs-nav-link:hover::after,
-            .vs-nav-link:focus-visible::after {
-                transform: scaleX(1);
-            }
-
-        .vs-nav-link.active {
-            color: rgb(201,162,39);
-        }
-
-            .vs-nav-link.active::after {
-                transform: scaleX(1);
-            }
-
-    @@media (prefers-reduced-motion: reduce) {
-        .vs-navbar {
-            animation: none !important;
-            opacity: 1 !important;
-            transform: none !important;
-        }
-    }
-
-    @@media (max-width:520px) {
-        .vs-navbar {
-            grid-template-columns: 1fr;
-            height: auto;
-            padding: 14px 5vw;
-            row-gap: 10px;
-        }
-
-        .vs-nav-brand {
-            justify-self: center;
-        }
-
-        .vs-nav-links {
-            gap: 1.4rem;
-        }
-    }
-</style>
+<link rel="stylesheet" href="~/css/Navbar.css" asp-append-version="true" />
 
 <nav class="vs-navbar">
-    <a class="vs-nav-brand" href="@Url.Action("Details", "Photographers")">VibeShoot</a>
+    <a class="vs-nav-brand" href="/photographers">VibeShoot</a>
     <div class="vs-nav-links">
         <a class="vs-nav-link @(Model.ActiveTab == "About" ? "active" : "")"
-           href="@Url.Action("AboutMe", "About", new { photographer = Model.Slug })">About</a>
+           href="/photographer/@Model.Slug/about">About</a>
         <a class="vs-nav-link @(Model.ActiveTab == "Album" ? "active" : "")"
-           href="@Url.Action("Gallery", "Album", new { photographer = Model.Slug })">Album</a>
+           href="/photographer/@Model.Slug/album">Album</a>
         <a class="vs-nav-link @(Model.ActiveTab == "Schedule" ? "active" : "")"
-           href="@Url.Action("Book", "Schedules", new { photographer = Model.Slug })">Schedule</a>
+           href="/photographer/@Model.Slug/schedule">Schedule</a>
     </div>
     <span></span>
 </nav>
+
+<div class="vs-nav-iris" id="navIris" aria-hidden="true"></div>
+<script src="~/js/Navbar.js" asp-append-version="true"></script>

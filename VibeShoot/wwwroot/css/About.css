@@ -1,0 +1,352 @@
+﻿:root {
+    --bg-0: #0a0a0c;
+    --bg-1: #161619;
+    --bokeh-gold: 201,162,39;
+    --bokeh-blue: 58,90,120;
+    --white: #f5f5f2;
+}
+
+.vs-page {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: radial-gradient(ellipse at 50% 30%, var(--bg-1) 0%, var(--bg-0) 70%);
+    font-family: 'Poppins', sans-serif;
+    z-index: 1;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+    .vs-page::-webkit-scrollbar {
+        display: none;
+    }
+
+.vs-bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.vs-bokeh {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(2px);
+    opacity: 0.5;
+    mix-blend-mode: screen;
+    animation: vs-drift linear infinite;
+}
+
+    .vs-bokeh.blur {
+        filter: blur(6px);
+    }
+
+    .vs-bokeh:nth-child(1) {
+        width: 200px;
+        height: 200px;
+        left: 10%;
+        top: 75%;
+        background: radial-gradient(circle, rgba(var(--bokeh-gold),0.85), rgba(var(--bokeh-gold),0) 70%);
+        animation-duration: 28s;
+    }
+
+    .vs-bokeh:nth-child(2) {
+        width: 110px;
+        height: 110px;
+        left: 82%;
+        top: 18%;
+        background: radial-gradient(circle, rgba(var(--bokeh-blue),0.85), rgba(var(--bokeh-blue),0) 70%);
+        animation-duration: 21s;
+        animation-delay: -4s;
+    }
+
+    .vs-bokeh:nth-child(3) {
+        width: 70px;
+        height: 70px;
+        left: 20%;
+        top: 12%;
+        background: radial-gradient(circle, rgba(255,255,255,0.55), rgba(255,255,255,0) 70%);
+        animation-duration: 16s;
+        animation-delay: -6s;
+    }
+
+@keyframes vs-drift {
+    0% {
+        transform: translate3d(0,0,0) scale(1);
+    }
+
+    50% {
+        transform: translate3d(2vw,-4vh,0) scale(1.08);
+    }
+
+    100% {
+        transform: translate3d(0,0,0) scale(1);
+    }
+}
+
+.vs-grain {
+    position: fixed;
+    inset: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+    opacity: 0.05;
+    animation: vs-grainMove 1s steps(4) infinite;
+    z-index: 2;
+    pointer-events: none;
+}
+
+@keyframes vs-grainMove {
+    0%, 100% {
+        transform: translate(0,0);
+    }
+
+    25% {
+        transform: translate(-2%,-1%);
+    }
+
+    50% {
+        transform: translate(1%,2%);
+    }
+
+    75% {
+        transform: translate(-1%,1%);
+    }
+}
+
+.vs-vignette {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(0,0,0,0.75) 100%);
+}
+
+.vs-iris-in {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: #000;
+    clip-path: circle(150% at 50% 50%);
+    pointer-events: none;
+    animation: vs-irisOpen 0.9s cubic-bezier(.2,.8,.2,1) forwards;
+}
+
+@keyframes vs-irisOpen {
+    to {
+        clip-path: circle(0% at 50% 50%);
+    }
+}
+
+.vs-about-wrap {
+    position: relative;
+    z-index: 5;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 130px 6vw 60px;
+}
+
+.vs-about-card {
+    display: flex;
+    align-items: center;
+    gap: clamp(2rem, 5vw, 4rem);
+    max-width: 980px;
+}
+
+.vs-about-logo-ring {
+    flex: none;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fdfdfb, #e9e9e6 70%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 26px;
+    border: 2px solid rgba(245,245,242,0.3);
+    box-shadow: 0 0 0 6px rgba(0,0,0,0.28), 0 18px 34px rgba(0,0,0,0.5);
+    opacity: 0;
+    transform: translateY(24px) scale(0.94);
+    animation: vs-fadeUpScale 0.75s cubic-bezier(.16,.9,.2,1) forwards;
+    animation-delay: 1s;
+}
+
+    .vs-about-logo-ring img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+@keyframes vs-fadeUpScale {
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.vs-about-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+}
+
+.vs-eyebrow {
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: rgba(245,245,242,0.45);
+    opacity: 0;
+    animation: vs-fadeSimple 0.8s ease forwards;
+    animation-delay: 1.1s;
+}
+
+.vs-about-name {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    font-size: clamp(1.9rem, 4.6vw, 3.1rem);
+    color: var(--white);
+    margin: 0.5rem 0 0.8rem;
+    letter-spacing: 0.01em;
+    line-height: 1.05;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: vs-fadeUp 0.7s cubic-bezier(.16,.9,.2,1) forwards;
+    animation-delay: 1.25s;
+}
+
+.vs-about-bio {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 300;
+    font-size: clamp(0.9rem, 1.5vw, 1.05rem);
+    line-height: 1.7;
+    color: rgba(245,245,242,0.78);
+    max-width: 46ch;
+    opacity: 0;
+    transform: translateY(18px);
+    animation: vs-fadeUp 0.7s ease forwards;
+    animation-delay: 1.45s;
+}
+
+@keyframes vs-fadeUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes vs-fadeSimple {
+    to {
+        opacity: 1;
+    }
+}
+
+.vs-social-block {
+    margin-top: clamp(1.6rem, 3vh, 2.4rem);
+    opacity: 0;
+    transform: translateY(16px);
+    animation: vs-fadeUp 0.7s ease forwards;
+    animation-delay: 1.65s;
+}
+
+.vs-social-label {
+    display: block;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(245,245,242,0.6);
+    margin-bottom: 12px;
+}
+
+.vs-social-row {
+    display: flex;
+    gap: 14px;
+}
+
+.vs-social-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 35% 30%, #fdfdfb, #e9e9e6 70%);
+    color: #1a1a1a;
+    border: 2px solid rgba(245,245,242,0.25);
+    box-shadow: 0 0 0 4px rgba(0,0,0,0.25), 0 10px 20px rgba(0,0,0,0.4);
+    transition: transform .3s cubic-bezier(.2,.8,.2,1), border-color .3s ease, color .3s ease;
+}
+
+    .vs-social-icon svg {
+        width: 20px;
+        height: 20px;
+        fill: currentColor;
+    }
+
+    .vs-social-icon:hover,
+    .vs-social-icon:focus-visible {
+        transform: translateY(-5px) scale(1.08);
+        border-color: rgba(201,162,39,0.9);
+        color: rgb(201,162,39);
+    }
+
+    .vs-social-icon:nth-child(1) {
+        animation-delay: 1.85s;
+    }
+
+    .vs-social-icon:nth-child(2) {
+        animation-delay: 2.0s;
+    }
+
+    .vs-social-icon:nth-child(3) {
+        animation-delay: 2.15s;
+    }
+
+    .vs-social-icon:nth-child(4) {
+        animation-delay: 2.3s;
+    }
+
+@media (prefers-reduced-motion: reduce) {
+    .vs-iris-in {
+        display: none;
+    }
+
+    .vs-bokeh, .vs-grain {
+        animation: none !important;
+    }
+
+    .vs-about-logo-ring, .vs-eyebrow, .vs-about-name, .vs-about-bio,
+    .vs-social-block, .vs-social-icon {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}
+
+@media (max-width:760px) {
+    .vs-about-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .vs-about-info {
+        align-items: center;
+        text-align: center;
+    }
+
+    .vs-about-bio {
+        max-width: 40ch;
+    }
+
+    .vs-social-row {
+        justify-content: center;
+    }
+}
