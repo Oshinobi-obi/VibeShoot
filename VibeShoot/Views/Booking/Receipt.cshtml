@@ -167,6 +167,61 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/shrinkImage.js" asp-append-version="true"></script>
     <script>
+        // Live refresh: every 5 seconds, ask whether the booking or its payments changed and, if so,
+        // swap in the updated statement (waits while the client is filling in the balance-payment form).
+        (function () {
+            var id = '@b.TransactionId', token = '@token';
+            if (!token) return;
+            var stamp = '@b.LiveStamp';     // what this page is showing right now
+
+            function payFormBusy() {
+                var form = document.querySelector('form.rc-pay');
+                if (!form) return false;
+                if (form.contains(document.activeElement)) return true;
+                var file = form.querySelector('input[type=file]');
+                var ref = form.querySelector('input[name=referenceNumber]');
+                return (file && file.files.length > 0) || (ref && ref.value.trim() !== '');
+            }
+
+            function swapIn(html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var freshPaper = doc.getElementById('receiptPaper');
+                if (freshPaper) document.getElementById('receiptPaper').replaceWith(freshPaper);
+
+                var oldPay = document.querySelector('form.rc-pay'), newPay = doc.querySelector('form.rc-pay');
+                if (oldPay && !newPay) oldPay.remove();
+                else if (!oldPay && newPay) freshPaper.after(newPay);
+                else if (oldPay && newPay) oldPay.replaceWith(newPay);
+            }
+
+            function check() {
+                if (document.hidden) return;
+                fetch('/booking/' + encodeURIComponent(id) + '/status?t=' + encodeURIComponent(token), { cache: 'no-store' })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (s) {
+                        if (!s || s.stamp === stamp || payFormBusy()) return;
+                        return fetch(window.location.href, { cache: 'no-store' })
+                            .then(function (r) { return r.ok ? r.text() : null; })
+                            .then(function (html) {
+                                if (!html) return;
+                                stamp = s.stamp;
+                                swapIn(html);
+                                if (s.status !== 'Pending') {
+                                    var card = document.getElementById('rcNotify');
+                                    if (card) card.hidden = true;
+                                }
+                                if (window.vsBookingStatusSeen) vsBookingStatusSeen(id, s.status);
+                            });
+                    })
+                    .catch(function () { });
+            }
+
+            check();
+            setInterval(check, 5000);
+            document.addEventListener('visibilitychange', check);
+        })();
+    </script>
+    <script>
         (function () {
             var id = '@b.TransactionId', token = '@token', status = '@b.Status';
             if (!window.vsRememberBooking || !token) return;

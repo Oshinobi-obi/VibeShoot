@@ -62,6 +62,8 @@ namespace VibeShoot.Controllers
             Response.Headers.CacheControl = "no-store";
             return Json(new
             {
+                // Changes whenever the booking or any of its payments changes (used for live refresh).
+                stamp = booking.LiveStamp,
                 status = booking.Status,
                 photographer = booking.Photographer?.Name,
                 date = booking.TargetDate.ToString("dddd, MMMM d"),

@@ -20,12 +20,24 @@ document.addEventListener('DOMContentLoaded', function () {
     var minMonth = new Date(view);
     var todayIso = iso(new Date());
 
+    var lastSchedule = '';
     function load() {
-        fetch('/photographer/' + encodeURIComponent(cfg.slug) + '/api/schedule')
-            .then(function (r) { return r.json(); })
-            .then(function (json) { schedule = json; renderCalendar(); })
-            .catch(function () { renderCalendar(); });
+        fetch('/photographer/' + encodeURIComponent(cfg.slug) + '/api/schedule', { cache: 'no-store' })
+            .then(function (r) { return r.text(); })
+            .then(function (text) {
+                if (text === lastSchedule) return;          // nothing changed since the last check
+                lastSchedule = text;
+                schedule = JSON.parse(text);
+                renderCalendar();
+                // Booking window open: refresh the time slots too (a slot someone just took gets crossed out).
+                if (state.date && wizard.classList.contains('open') && state.step === 0) { renderSlots(); updateSummary(); }
+            })
+            .catch(function () { if (!lastSchedule) renderCalendar(); });
     }
+
+    // Live availability: re-check every 5 seconds while the page is visible.
+    setInterval(function () { if (!document.hidden) load(); }, 5000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) load(); });
 
     function dayState(key) {
         if (key <= todayIso) return 'past';

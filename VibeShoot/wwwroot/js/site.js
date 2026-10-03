@@ -106,7 +106,7 @@
         if (watching || !window.vsNotifySupported() || Notification.permission !== 'granted') return;
         watching = true;
         check();
-        setInterval(check, 60000);
+        setInterval(check, 10000);
     }
 
     // Ask the server about every booking that is still waiting for a decision.

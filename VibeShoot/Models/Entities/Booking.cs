@@ -68,6 +68,11 @@ namespace VibeShoot.Models.Entities
             : AmountForVerification > 0 ? "For Verification"
             : "Unpaid";
 
+        /// <summary>Changes whenever the booking or any of its payments changes (drives the client's live refresh).</summary>
+        [NotMapped]
+        public string LiveStamp =>
+            $"{Status}|{UpdatedAt?.Ticks}|{string.Join(",", Payments.OrderBy(p => p.Id).Select(p => p.Id + ":" + p.Status))}";
+
         [NotMapped]
         public string TimeRange => $"{FormatTime(StartTime)} – {FormatTime(EndTime)}";
 
