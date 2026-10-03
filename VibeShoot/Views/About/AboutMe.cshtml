@@ -159,10 +159,18 @@
             {
                 <article class="ab-pkg reveal @(i == 0 && pkg.Price > 0 ? "featured" : "")" style="--d:@(i * 100)ms">
                     <span class="ab-pkg-cat">@pkg.Category</span>
+                    @if (pkg.DiscountBadge != null)
+                    {
+                        <span class="ab-pkg-promo">@(pkg.DiscountLabel ?? pkg.DiscountBadge)</span>
+                    }
                     <h3>@pkg.Name</h3>
                     <div class="ab-pkg-price">
                         @if (pkg.Price > 0)
                         {
+                            @if (pkg.DiscountBadge != null)
+                            {
+                                <s>@Ui.Peso(pkg.OriginalPrice).Replace(".00", "")</s>
+                            }
                             <b>@Ui.Peso(pkg.Price).Replace(".00", "")</b><small>@pkg.Hours-hr coverage</small>
                         }
                         else

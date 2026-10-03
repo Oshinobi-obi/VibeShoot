@@ -194,4 +194,25 @@ CREATE INDEX `IX_MediaFiles_SourcePath` ON `MediaFiles` (`SourcePath`);
 INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`)
 VALUES ('20261003120735_AddMediaFiles', '9.0.0');
 
+ALTER TABLE `Packages` ADD `DiscountEnd` datetime(6) NULL;
+
+ALTER TABLE `Packages` ADD `DiscountLabel` varchar(64) CHARACTER SET utf8mb4 NULL;
+
+ALTER TABLE `Packages` ADD `DiscountStart` datetime(6) NULL;
+
+ALTER TABLE `Packages` ADD `DiscountType` varchar(16) CHARACTER SET utf8mb4 NULL;
+
+ALTER TABLE `Packages` ADD `DiscountValue` decimal(12,2) NOT NULL DEFAULT 0.0;
+
+ALTER TABLE `Bookings` ADD `DiscountAmount` decimal(12,2) NOT NULL DEFAULT 0.0;
+
+ALTER TABLE `Bookings` ADD `DiscountLabel` varchar(64) CHARACTER SET utf8mb4 NULL;
+
+ALTER TABLE `Bookings` ADD `OriginalPrice` decimal(12,2) NOT NULL DEFAULT 0.0;
+
+UPDATE `Bookings` SET `OriginalPrice` = `TotalPrice`;
+
+INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`)
+VALUES ('20261003133926_AddPackageDiscounts', '9.0.0');
+
 COMMIT;

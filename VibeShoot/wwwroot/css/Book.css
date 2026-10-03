@@ -395,3 +395,14 @@
 .vs-notify[hidden] { display: none; }
 .vs-notify .vs-btn { padding: 10px 16px; flex: none; }
 @media (max-width: 600px) { .vs-notify { flex-direction: column; align-items: stretch; text-align: center; } }
+
+
+/* ---------- Discounts ---------- */
+.vs-pkg .price s, .vs-pkg-mini s { color: var(--text-3); font-family: 'Poppins', sans-serif; font-size: 0.8rem; font-weight: 400; margin-right: 4px; }
+.vs-pkg-promo {
+    display: inline-block; margin-bottom: 8px; padding: 3px 10px; border-radius: 999px;
+    background: rgba(240,99,99,0.16); border: 1px solid rgba(240,99,99,0.45); color: #ff9a9a;
+    font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+}
+.vs-sum-total .disc { color: #8ff0c2; }
+.vs-sum-total [hidden] { display: none; }

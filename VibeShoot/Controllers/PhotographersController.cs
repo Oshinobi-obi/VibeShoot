@@ -24,6 +24,7 @@ namespace VibeShoot.Controllers
                 .OrderBy(p => p.SortOrder).ThenBy(p => p.Name)
                 .Select(p => new PhotographerCard
                 {
+                    Id = p.Id,
                     Slug = p.Slug,
                     Name = p.Name,
                     Tagline = p.Tagline,
@@ -32,9 +33,16 @@ namespace VibeShoot.Controllers
                     CoverImage = p.GalleryImages
                         .OrderByDescending(g => g.IsFeatured).ThenBy(g => g.SortOrder)
                         .Select(g => g.FilePath).FirstOrDefault(),
-                    StartingPrice = p.Packages.Where(k => k.IsActive && k.Price > 0).Min(k => (decimal?)k.Price),
                 })
                 .ToListAsync();
+
+            // Starting rate = cheapest active package today, after any discount.
+            var today = System.DateTime.Today;
+            var packages = await _context.Packages.Where(k => k.IsActive && k.Price > 0).ToListAsync();
+            foreach (var c in cards)
+            {
+                c.StartingPrice = packages.Where(k => k.PhotographerId == c.Id).Select(k => (decimal?)k.PriceOn(today)).Min();
+            }
 
             return View("~/Views/Photographers/Details.cshtml", cards);
         }

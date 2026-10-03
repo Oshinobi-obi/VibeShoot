@@ -364,3 +364,7 @@
     .ab-hero-copy > *, .ab-stack, .reveal { animation: none !important; opacity: 1 !important; transform: none !important; transition: none !important; }
     .ab-slide { transition: none; }
 }
+
+/* Discounts */
+.ab-pkg-promo { position: absolute; top: 24px; right: 22px; padding: 3px 10px; border-radius: 999px; background: rgba(240,99,99,0.16); border: 1px solid rgba(240,99,99,0.45); color: #ff9a9a; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+.ab-pkg-price s { color: var(--ink-3); font-size: 0.95rem; }

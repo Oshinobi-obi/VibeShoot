@@ -32,8 +32,20 @@ namespace VibeShoot.Models.Entities
         [MaxLength(64)] public string Category { get; set; } = "";
         [MaxLength(128)] public string PackageName { get; set; } = "";
 
+        /// <summary>What the client pays for the package (after any discount).</summary>
         [Column(TypeName = "decimal(12,2)")]
         public decimal TotalPrice { get; set; }
+
+        /// <summary>Regular package rate at the time of booking (before discount).</summary>
+        [Column(TypeName = "decimal(12,2)")]
+        public decimal OriginalPrice { get; set; }
+
+        /// <summary>Pesos taken off by the photographer's discount (0 = none).</summary>
+        [Column(TypeName = "decimal(12,2)")]
+        public decimal DiscountAmount { get; set; }
+
+        [MaxLength(64)]
+        public string? DiscountLabel { get; set; }
 
         [Column(TypeName = "decimal(12,2)")]
         public decimal DownPaymentRequired { get; set; }

@@ -30,7 +30,11 @@ namespace VibeShoot.Models
     {
         public string Category { get; set; } = "";
         public string Name { get; set; } = "";
+        /// <summary>Price today (after any discount).</summary>
         public decimal Price { get; set; }
+        public decimal OriginalPrice { get; set; }
+        public string? DiscountBadge { get; set; }
+        public string? DiscountLabel { get; set; }
         public int Hours { get; set; }
         public List<string> Highlights { get; set; } = new List<string>();
     }

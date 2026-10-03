@@ -3,16 +3,20 @@
     ViewData["Title"] = "Book a Session";
     Layout = "_Layout";
     var p = Model.Photographer;
+    var today = DateTime.Today;
     var packagesJson = System.Text.Json.JsonSerializer.Serialize(Model.Packages.Select(k => new
     {
         id = k.Id,
         category = k.Category,
         name = k.Name,
-        price = k.Price,
+        price = k.PriceOn(today),
+        originalPrice = k.Price,
+        discountBadge = k.HasActiveDiscount(today) ? k.DiscountBadge : null,
+        discountLabel = k.HasActiveDiscount(today) ? k.DiscountLabel : null,
         hours = k.DurationHours,
         inclusions = k.InclusionList
     }));
-    var priced = Model.Packages.Where(k => k.Price > 0).OrderBy(k => k.Price).ToList();
+    var priced = Model.Packages.Where(k => k.Price > 0).OrderBy(k => k.PriceOn(today)).ToList();
 }
 
 @section Styles {
@@ -76,7 +80,16 @@
                     <h3>Starting rates</h3>
                     @foreach (var k in priced.GroupBy(k => k.Category).Select(g => g.First()))
                     {
-                        <div class="vs-pkg-mini"><span>@k.Category · @k.Name</span><b>@Ui.Peso(k.Price)</b></div>
+                        <div class="vs-pkg-mini">
+                            <span>@k.Category · @k.Name</span>
+                            <b>
+                                @if (k.HasActiveDiscount(today))
+                                {
+                                    <s>@Ui.Peso(k.Price).Replace(".00", "")</s>
+                                }
+                                @Ui.Peso(k.PriceOn(today))
+                            </b>
+                        </div>
                     }
                 </div>
             }
@@ -215,6 +228,8 @@
                 <div class="vs-sum-row"><span>Duration</span><span id="sumDur">—</span></div>
             </div>
             <div class="vs-sum-total">
+                <div id="sumRegularRow" hidden><span>Regular price</span><span id="sumRegular"></span></div>
+                <div id="sumDiscountRow" class="disc" hidden><span id="sumDiscountLabel">Discount</span><span id="sumDiscount"></span></div>
                 <div><span>Package price</span><span id="sumPrice">—</span></div>
                 <div class="due"><span>Due now (50%)</span><span id="sumDue">—</span></div>
             </div>

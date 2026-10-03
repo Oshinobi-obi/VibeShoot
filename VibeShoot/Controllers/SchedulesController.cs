@@ -111,8 +111,11 @@ namespace VibeShoot.Controllers
             var slotError = BookingRules.CheckSlot(start, end, sameDay);
             if (slotError != null) return Fail(slotError);
 
-            // Price is always taken from the database, never from the browser.
-            var downPayment = BookingRules.DownPaymentFor(package.Price);
+            // Price is always taken from the database (including any active discount), never from the browser.
+            var today = DateTime.Today;
+            var price = package.PriceOn(today);
+            var discount = package.DiscountAmountOn(today);
+            var downPayment = BookingRules.DownPaymentFor(price);
             string? reference = null;
             if (downPayment > 0)
             {
@@ -142,7 +145,10 @@ namespace VibeShoot.Controllers
                 Venue = form.Venue.Trim(),
                 Category = package.Category,
                 PackageName = package.Name,
-                TotalPrice = package.Price,
+                TotalPrice = price,
+                OriginalPrice = package.Price,
+                DiscountAmount = discount,
+                DiscountLabel = discount > 0 ? (string.IsNullOrWhiteSpace(package.DiscountLabel) ? package.DiscountBadge : package.DiscountLabel) : null,
                 DownPaymentRequired = downPayment,
                 Notes = form.Notes?.Trim(),
                 Status = BookingStatus.Pending,

@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var peso = function (n) { return '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
     var iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
     var fmtHour = function (h) { return (h % 12 || 12) + ':00 ' + (h >= 12 ? 'PM' : 'AM'); };
+    var escapeHtml = function (t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
     var toHours = function (hhmm) { var p = hhmm.split(':'); return Number(p[0]) + Number(p[1]) / 60; };
 
     // ------------------------------------------------------------ Calendar
@@ -153,9 +154,11 @@ document.addEventListener('DOMContentLoaded', function () {
             card.className = 'vs-pkg' + (state.pkg && state.pkg.id === p.id ? ' on' : '');
             var items = p.inclusions.map(function (i) { var li = document.createElement('li'); li.textContent = i; return li.outerHTML; }).join('');
             var name = document.createElement('b'); name.textContent = p.name;
-            card.innerHTML = name.outerHTML +
-                '<div class="price">' + (p.price > 0 ? peso(p.price).replace('.00', '') : 'Custom quote') + '</div>' +
-                '<div class="dur">' + p.hours + '-hour coverage' + (p.price > 0 ? ' · ' + peso(p.price / 2) + ' down' : '') + '</div>' +
+            var badge = p.discountBadge ? '<span class="vs-pkg-promo">' + escapeHtml(p.discountLabel || p.discountBadge) + '</span>' : '';
+            var was = p.discountBadge ? '<s>' + peso(p.originalPrice).replace('.00', '') + '</s> ' : '';
+            card.innerHTML = badge + name.outerHTML +
+                '<div class="price">' + was + (p.price > 0 ? peso(p.price).replace('.00', '') : 'Custom quote') + '</div>' +
+                '<div class="dur">' + p.hours + '-hour coverage' + (p.price > 0 ? ' · 50% down payment: ' + peso(p.price / 2) : '') + '</div>' +
                 '<ul>' + items + '</ul>';
             card.addEventListener('click', function () {
                 state.pkg = p;
@@ -208,6 +211,14 @@ document.addEventListener('DOMContentLoaded', function () {
         $('sumPkg').textContent = state.pkg ? state.pkg.name : '—';
         $('sumDur').textContent = state.pkg ? state.pkg.hours + ' hours' : '—';
         var price = state.pkg ? state.pkg.price : 0;
+        var hasDiscount = !!(state.pkg && state.pkg.discountBadge);
+        $('sumRegularRow').hidden = !hasDiscount;
+        $('sumDiscountRow').hidden = !hasDiscount;
+        if (hasDiscount) {
+            $('sumRegular').textContent = peso(state.pkg.originalPrice);
+            $('sumDiscountLabel').textContent = state.pkg.discountLabel || ('Discount (' + state.pkg.discountBadge.toLowerCase() + ')');
+            $('sumDiscount').textContent = '- ' + peso(state.pkg.originalPrice - price);
+        }
         $('sumPrice').textContent = state.pkg ? (price > 0 ? peso(price) : 'Custom quote') : '—';
         $('sumDue').textContent = state.pkg ? (price > 0 ? peso(price / 2) : '₱0.00') : '—';
         $('payAmount').textContent = peso(price / 2);

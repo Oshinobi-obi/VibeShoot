@@ -36,8 +36,9 @@ namespace VibeShoot.Controllers
 
             var packages = await _context.Packages
                 .Where(k => k.PhotographerId == entity.Id && k.IsActive)
-                .OrderBy(k => k.Price == 0).ThenBy(k => k.Price)
                 .ToListAsync();
+            var today = System.DateTime.Today;
+            packages = packages.OrderBy(k => k.Price == 0).ThenBy(k => k.PriceOn(today)).ToList();
 
             var model = new PhotographerProfile
             {
@@ -54,7 +55,7 @@ namespace VibeShoot.Controllers
                 Showcase = photos.Skip(3).Take(6).Select(p => p.FilePath).ToList(),
                 PhotoCount = photos.Count,
                 AlbumCount = photos.Select(p => p.Category).Distinct().Count(),
-                StartingPrice = packages.Where(k => k.Price > 0).Select(k => (decimal?)k.Price).Min(),
+                StartingPrice = packages.Where(k => k.Price > 0).Select(k => (decimal?)k.PriceOn(today)).Min(),
                 // One card per event type, cheapest first.
                 Packages = packages
                     .GroupBy(k => k.Category)
@@ -64,7 +65,10 @@ namespace VibeShoot.Controllers
                     {
                         Category = k.Category,
                         Name = k.Name,
-                        Price = k.Price,
+                        Price = k.PriceOn(today),
+                        OriginalPrice = k.Price,
+                        DiscountBadge = k.HasActiveDiscount(today) ? k.DiscountBadge : null,
+                        DiscountLabel = k.HasActiveDiscount(today) ? k.DiscountLabel : null,
                         Hours = k.DurationHours,
                         Highlights = k.InclusionList.Take(4).ToList()
                     })

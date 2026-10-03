@@ -135,3 +135,5 @@ html, body, * {
 .rc-flash.notify b { color: #fff; }
 .rc-flash.notify .rc-btn { flex: none; padding: 8px 14px; }
 @media (max-width: 640px) { .rc-flash.notify { flex-direction: column; align-items: stretch; text-align: center; } }
+
+.rc-totals .disc { color: #127a4c; }
