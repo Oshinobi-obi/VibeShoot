@@ -1,0 +1,233 @@
+﻿.vs-dashboard-container {
+    position: relative;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    padding: 100px 5vw 50px;
+    max-width: 1400px;
+    margin: 0 auto;
+    align-items: start;
+}
+
+.vs-admin-panel {
+    background: rgba(16, 16, 18, 0.85);
+    border: 1px solid rgba(245,245,242,0.15);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+}
+
+.scroll-panel {
+    max-height: 80vh;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+    .scroll-panel::-webkit-scrollbar {
+        display: none;
+    }
+
+.vs-legend {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(245,245,242,0.8);
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+    .legend-dot.status-available {
+        background: #28a745;
+    }
+
+    .legend-dot.status-blocked {
+        background: #dc3545;
+    }
+
+    .legend-dot.status-pending {
+        background: #ffc107;
+    }
+
+    .legend-dot.status-confirmed {
+        background: #007bff;
+    }
+
+.vs-day-cell.status-available {
+    border-color: rgba(40, 167, 69, 0.4);
+    background: rgba(40, 167, 69, 0.05);
+}
+
+    .vs-day-cell.status-available .vs-day-number {
+        color: #28a745;
+    }
+
+    .vs-day-cell.status-available:hover {
+        background: rgba(40, 167, 69, 0.15);
+        border-color: #28a745;
+        transform: translateY(-3px);
+    }
+
+.vs-day-cell.status-blocked {
+    border-color: rgba(220, 53, 69, 0.4);
+    background: rgba(220, 53, 69, 0.05);
+}
+
+    .vs-day-cell.status-blocked .vs-day-number {
+        color: #dc3545;
+    }
+
+    .vs-day-cell.status-blocked:hover {
+        background: rgba(220, 53, 69, 0.15);
+        border-color: #dc3545;
+        transform: translateY(-3px);
+    }
+
+.vs-day-cell.status-pending {
+    border-color: rgba(255, 193, 7, 0.4);
+    background: rgba(255, 193, 7, 0.05);
+    pointer-events: none;
+}
+
+    .vs-day-cell.status-pending .vs-day-number {
+        color: #ffc107;
+    }
+
+.vs-day-cell.status-confirmed {
+    border-color: rgba(0, 123, 255, 0.4);
+    background: rgba(0, 123, 255, 0.05);
+    pointer-events: none;
+}
+
+    .vs-day-cell.status-confirmed .vs-day-number {
+        color: #007bff;
+    }
+
+.admin-booking-card {
+    background: rgba(0,0,0,0.4);
+    border-left: 4px solid rgb(201,162,39);
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+@media (max-width: 900px) {
+    .vs-dashboard-container {
+        grid-template-columns: 1fr;
+        padding-top: 80px;
+    }
+}
+
+/* =========================================
+   PAGINATION STYLES
+   ========================================= */
+.vs-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding-bottom: 10px;
+}
+
+.vs-page-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--white);
+    width: 35px;
+    height: 35px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .vs-page-btn:hover {
+        background: rgba(201,162,39,0.2);
+        border-color: rgb(201,162,39);
+    }
+
+    .vs-page-btn.active {
+        background: rgb(201,162,39);
+        color: #000;
+        font-weight: bold;
+        border-color: rgb(201,162,39);
+    }
+
+/* =========================================
+   RECEIPT PREVIEW MODAL
+   ========================================= */
+.vs-receipt-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(4, 4, 5, 0.95);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+    .vs-receipt-modal.open {
+        display: flex;
+        opacity: 1;
+    }
+
+.vs-receipt-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    animation: vs-fadeUp 0.4s cubic-bezier(.2,.8,.2,1) forwards;
+}
+
+    .vs-receipt-content img {
+        max-width: 100%;
+        max-height: 85vh;
+        border-radius: 8px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        border: 2px solid rgb(201,162,39);
+        object-fit: contain;
+    }
+
+.vs-receipt-close {
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    background: #dc3545;
+    color: white;
+    border: 2px solid #fff;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    transition: transform 0.2s;
+}
+
+    .vs-receipt-close:hover {
+        transform: scale(1.1);
+    }

@@ -24,7 +24,21 @@
 
     <div class="vs-schedule-wrap">
         <h1 class="vs-title">Book a Session</h1>
-        <p class="vs-subtitle">Select an available date below to request a shoot.</p>
+        <p class="vs-subtitle" style="margin-bottom: 10px;">Select an available date below to request a shoot.</p>
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div style="background: rgba(220, 53, 69, 0.2); border: 1px solid rgba(220, 53, 69, 0.5); color: #ff6b6b; padding: 15px; border-radius: 6px; font-size: 0.95rem; margin-bottom: 20px; text-align: center; max-width: 800px; width: 100%;">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <div style="display: flex; gap: 15px; margin-bottom: 25px; font-size: 0.85rem; flex-wrap: wrap; justify-content: center; color: rgba(245,245,242,0.8);">
+            <div style="display: flex; align-items: center; gap: 8px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: #28a745;"></div> Available</div>
+            <div style="display: flex; align-items: center; gap: 8px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: #dc3545;"></div> Fully Booked</div>
+            <div style="display: flex; align-items: center; gap: 8px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: #ffc107;"></div> 1 Slot Pending</div>
+            <div style="display: flex; align-items: center; gap: 8px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: #007bff;"></div> 1 Slot Confirmed</div>
+        </div>
 
         <div class="vs-calendar">
             <div class="vs-calendar-header">
@@ -84,10 +98,24 @@
                 </select>
             </div>
 
+            <div style="display: flex; gap: 15px; margin-bottom: 18px;">
+                <div style="flex: 1;">
+                    <label style="display: block; font-size: 0.85rem; color: rgba(245,245,242,0.6); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">Start Time</label>
+                    <select name="TimeSlot" id="timeSlotInput" required style="background: rgba(22, 22, 25, 0.95); border: 1px solid rgba(201, 162, 39, 0.4); color: white; padding: 12px 14px; border-radius: 6px; width: 100%; font-family: 'Poppins', sans-serif; cursor: pointer;">
+                        <option value="" disabled selected style="background: #161619; color: white;">Select a Time</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label style="display: block; font-size: 0.85rem; color: rgba(245,245,242,0.6); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">End Time</label>
+                    <input type="text" id="endTimeDisplay" readonly placeholder="Auto-calculated" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); padding: 12px 14px; border-radius: 6px; width: 100%; font-family: 'Poppins', sans-serif; cursor: not-allowed;" />
+                    <input type="hidden" name="EndTime" id="endTimeInput" />
+                </div>
+            </div>
+            <span style="font-size: 0.75rem; color: rgba(245,245,242,0.5); margin-top: -10px; margin-bottom: 18px; display: block;">Operating hours: 8:00 AM to 8:00 PM</span>
+
             <div class="vs-form-group" id="packagesWrapper" style="display:none;">
                 <label>Select Package</label>
-                <div class="vs-packages-container" id="packagesContainer">
-                </div>
+                <div class="vs-packages-container" id="packagesContainer"></div>
             </div>
 
             <div class="vs-tc-group">
@@ -96,7 +124,6 @@
             </div>
 
             <input type="file" id="formReceiptFile" name="ReceiptImage" style="display:none;" />
-
             <button type="submit" class="vs-submit-btn" id="submitBtn" disabled>Confirm Booking</button>
         </form>
     </div>
@@ -110,7 +137,7 @@
             <ul>
                 <li>Down Payment: 50% (non-refundable) due upon booking.</li>
                 <li>Balance: Due on or before the event date / after the session.</li>
-                <li>Payment Method: GCash for down payment, can be Cash or GCash for the remaining balance.</li>
+                <li>Payment Method: GCash for down payment, can be Cash or Gcash for the remaining balance.</li>
             </ul>
             <h4>Cancellation Policy</h4>
             <ul>
@@ -206,6 +233,7 @@
 
                 <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Transaction ID:</strong> <span id="recTxId" style="font-weight: 500;"></span></p>
                 <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Client Name:</strong> <span id="recName" style="font-weight: 500;"></span></p>
+                <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Time:</strong> <span id="recTime" style="font-weight: 500; color: rgb(201,162,39);"></span></p>
                 <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Venue:</strong> <span id="recVenue" style="font-weight: 500;"></span></p>
                 <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Category:</strong> <span id="recCategory" style="font-weight: 500;"></span></p>
                 <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Package Type:</strong> <span id="recPackage" style="font-weight: 500;"></span></p>

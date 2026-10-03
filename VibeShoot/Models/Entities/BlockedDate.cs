@@ -1,0 +1,15 @@
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+
+namespace VibeShoot.Models.Entities
+{
+    public class BlockedDate
+    {
+        [Key]
+        public int Id { get; set; }
+        public int PhotographerId { get; set; }
+        public DateTime Date { get; set; }
+
+        public Photographer Photographer { get; set; }
+    }
+}

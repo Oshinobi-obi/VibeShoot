@@ -614,3 +614,39 @@
         flex-direction: column;
     }
 }
+
+.vs-day-cell.status-available {
+    border-color: rgba(40, 167, 69, 0.4);
+    background: rgba(40, 167, 69, 0.05);
+}
+
+    .vs-day-cell.status-available .vs-day-number {
+        color: #28a745;
+    }
+
+.vs-day-cell.status-blocked {
+    border-color: rgba(220, 53, 69, 0.4);
+    background: rgba(220, 53, 69, 0.05);
+}
+
+    .vs-day-cell.status-blocked .vs-day-number {
+        color: #dc3545;
+    }
+
+.vs-day-cell.status-pending {
+    border-color: rgba(255, 193, 7, 0.4);
+    background: rgba(255, 193, 7, 0.05);
+}
+
+    .vs-day-cell.status-pending .vs-day-number {
+        color: #ffc107;
+    }
+
+.vs-day-cell.status-confirmed {
+    border-color: rgba(0, 123, 255, 0.4);
+    background: rgba(0, 123, 255, 0.05);
+}
+
+    .vs-day-cell.status-confirmed .vs-day-number {
+        color: #007bff;
+    }

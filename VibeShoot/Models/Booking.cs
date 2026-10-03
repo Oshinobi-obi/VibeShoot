@@ -16,10 +16,11 @@ namespace VibeShoot.Models.Entities
         public string Category { get; set; }
         public string PackageName { get; set; }
         public decimal AmountPaid { get; set; }
+        public string TimeSlot { get; set; }
+        public string EndTime { get; set; }
         public string ReceiptImagePath { get; set; }
         public string Status { get; set; } = "Pending";
         public DateTime CreatedAt { get; set; }
-
         public Photographer Photographer { get; set; }
     }
 }

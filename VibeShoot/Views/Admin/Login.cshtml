@@ -1,0 +1,47 @@
+﻿@model VibeShoot.Models.Admin.AdminLoginViewModel
+@{
+    ViewData["Title"] = "Admin Login";
+    Layout = "_Layout";
+}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="~/css/Book.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/Login.css" asp-append-version="true" />
+
+<div class="vs-page" style="display: flex; align-items: center; justify-content: center;">
+    <div class="vs-bg-layer">
+        <div class="vs-bokeh"></div>
+        <div class="vs-bokeh blur"></div>
+        <div class="vs-bokeh"></div>
+    </div>
+    <div class="vs-grain"></div>
+    <div class="vs-vignette"></div>
+
+    <div class="vs-modal-content" style="position: relative; z-index: 5; width: min(90vw, 400px); box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
+        <h2 class="vs-form-title" style="text-align: center; color: rgb(201,162,39);">VIBESHOOT ADMIN</h2>
+        <p style="text-align: center; color: rgba(245,245,242,0.6); font-size: 0.85rem; margin-bottom: 25px;">Sign in to manage bookings and schedules</p>
+
+        @if (!string.IsNullOrEmpty(Model?.ErrorMessage))
+        {
+            <div style="background: rgba(220, 53, 69, 0.2); border: 1px solid rgba(220, 53, 69, 0.5); color: #ff6b6b; padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 15px; text-align: center;">
+                @Model.ErrorMessage
+            </div>
+        }
+
+        <form asp-controller="Admin" asp-action="Login" method="post">
+            <div class="vs-form-group">
+                <label>Username</label>
+                <input type="text" autocomplete="off" name="Username" required placeholder="Enter admin username" style="width: 100%;" />
+            </div>
+
+            <div class="vs-form-group">
+                <label>Password</label>
+                <input type="password" autocomplete="off" name="Password" required placeholder="Enter password" style="width: 100%;" />
+            </div>
+
+            <button type="submit" class="vs-submit-btn" style="margin-top: 15px; width: 100%;">Login</button>
+        </form>
+    </div>
+</div>

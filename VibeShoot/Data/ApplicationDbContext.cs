@@ -12,5 +12,6 @@ namespace VibeShoot.Data
         public DbSet<Photographer> Photographers { get; set; }
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<Admin> Admins { get; set; }
+        public DbSet<BlockedDate> BlockedDates { get; set; }
     }
 }
