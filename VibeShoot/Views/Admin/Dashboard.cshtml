@@ -1,278 +1,168 @@
-﻿@model IEnumerable<VibeShoot.Models.Entities.Booking>
+@model VibeShoot.Models.Admin.DashboardViewModel
+@using VibeShoot.Models.Entities
 @{
-    ViewData["Title"] = "Admin Dashboard";
-    Layout = "_Layout";
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Overview";
+    ViewData["Nav"] = "Dashboard";
+    ViewData["Subtitle"] = DateTime.Today.ToString("dddd, MMMM d, yyyy");
+
+    var pidQuery = ViewBag.SelectedPhotographerId is int sp ? $"&photographerId={sp}" : "";
+    var change = Model.RevenueLastMonth == 0 ? (decimal?)null : (Model.RevenueThisMonth - Model.RevenueLastMonth) / Model.RevenueLastMonth * 100;
+
+    // Round the chart's top to a friendly number so gridlines read cleanly.
+    var maxVal = Model.Monthly.Count == 0 ? 0 : Model.Monthly.Max(m => m.Amount);
+    decimal magnitude = maxVal <= 0 ? 1000 : (decimal)Math.Pow(10, Math.Floor(Math.Log10((double)maxVal)));
+    var top = maxVal <= 0 ? 4000 : new[] { 1m, 2m, 4m, 5m, 10m }.Select(f => f * magnitude).First(t => t >= maxVal);
+    var ticks = 4;
+
+    var statusColors = new Dictionary<string, string>
+    {
+        [BookingStatus.Pending] = "var(--amber)",
+        [BookingStatus.Confirmed] = "var(--blue)",
+        [BookingStatus.Completed] = "var(--green)",
+        [BookingStatus.Declined] = "var(--red)",
+        [BookingStatus.Cancelled] = "var(--gray)",
+    };
+    var statusTotal = Math.Max(1, Model.StatusCounts.Values.Sum());
 }
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-<link rel="stylesheet" href="~/css/Navbar.css" asp-append-version="true" />
-<link rel="stylesheet" href="~/css/Book.css" asp-append-version="true" />
-<link rel="stylesheet" href="~/css/Dashboard.css" asp-append-version="true" />
-
-<div class="vs-page">
-    <div class="vs-bg-layer">
-        <div class="vs-bokeh"></div>
-        <div class="vs-bokeh blur"></div>
-        <div class="vs-bokeh"></div>
-    </div>
-    <div class="vs-grain"></div>
-    <div class="vs-vignette"></div>
-
-    <nav class="vs-navbar" style="position: absolute; top:0; width: 100%; z-index: 10;">
-        <a class="vs-nav-brand" href="#">VibeShoot Admin</a>
-        <div class="vs-nav-links">
-            <a class="vs-nav-link" href="@Url.Action("Logout", "Admin")">Logout</a>
-        </div>
-        <span></span>
-    </nav>
-
-    <div class="vs-dashboard-container">
-        <!-- LEFT COLUMN: Calendar Panel -->
-        <div class="vs-admin-panel">
-            <h2 class="vs-title" style="text-align: center; margin-bottom: 5px;">Schedule Manager</h2>
-            <p class="vs-subtitle" style="text-align: center;">Click on a Green date to block it. Click a Red date to unblock.</p>
-
-            <div class="vs-legend" style="margin-bottom: 20px;">
-                <div class="legend-item"><div class="legend-dot status-available"></div> Available</div>
-                <div class="legend-item"><div class="legend-dot status-blocked"></div> Not Available</div>
-                <div class="legend-item"><div class="legend-dot status-pending"></div> Pending</div>
-                <div class="legend-item"><div class="legend-dot status-confirmed"></div> Confirmed</div>
-            </div>
-
-            <div class="vs-calendar">
-                <div class="vs-calendar-header">
-                    <button class="vs-calendar-btn" id="adminPrevMonth"><svg viewBox="0 0 24 24"><path d="M14.7 5.3 8 12l6.7 6.7 1.4-1.4L10.8 12l5.3-5.3z" /></svg></button>
-                    <div class="vs-month-year" id="adminMonthYear"></div>
-                    <button class="vs-calendar-btn" id="adminNextMonth"><svg viewBox="0 0 24 24"><path d="M9.3 5.3 16 12l-6.7 6.7-1.4-1.4L13.2 12 7.9 6.7z" /></svg></button>
-                </div>
-                <div class="vs-days-grid" id="adminCalendarGrid"></div>
-            </div>
-        </div>
-
-        <!-- RIGHT COLUMN: Booking Requests List -->
-        <div class="vs-admin-panel scroll-panel">
-            <h2 class="vs-form-title" style="margin-top: 0; color: var(--white);">Booking Requests</h2>
-
-            @if (!Model.Any())
+<section class="kpis">
+    <div class="kpi highlight">
+        <div class="kpi-label"><svg><use href="#i-wallet" /></svg>Collected this month</div>
+        <div class="kpi-value">@Ui.Peso(Model.RevenueThisMonth)</div>
+        <div class="kpi-sub">
+            @if (change != null)
             {
-                <p style="color: rgba(245,245,242,0.5);">No bookings found.</p>
+                <span class="@(change >= 0 ? "up" : "down")">@(change >= 0 ? "▲" : "▼") @Math.Abs(change.Value).ToString("0")%</span> <span>vs last month</span>
             }
-
-            <!-- Wrap bookings so JS can paginate them -->
-            <div id="bookingListContainer">
-                @foreach (var booking in Model)
-                {
-                    <div class="admin-booking-card">
-                        <h3 style="margin: 0 0 5px; color: var(--white);">@booking.ClientName</h3>
-                        <p style="margin: 0; font-size: 0.85rem; color: rgba(245,245,242,0.7);">
-                            <strong>Date:</strong> @booking.TargetDate.ToString("MMM dd, yyyy") <br />
-                            <strong>Status:</strong> <span style="color: @(booking.Status == "Pending" ? "#ffc107" : booking.Status == "Confirmed" ? "#007bff" : "#dc3545")">@booking.Status</span><br />
-                            <strong>Package:</strong> @booking.PackageName <br />
-                            <strong>TxID:</strong> @booking.TransactionId
-                        </p>
-                        <div style="margin-top: 10px; display: flex; gap: 10px;">
-
-                            <!-- NEW: View Receipt Button that triggers the Modal -->
-                            <button type="button" class="vs-submit-btn view-receipt-btn" data-img="@booking.ReceiptImagePath" style="padding: 5px 15px; font-size: 0.8rem; background: transparent; border: 1px solid rgb(201,162,39); color: rgb(201,162,39);">View Receipt</button>
-
-                            @if (booking.Status == "Pending")
-                            {
-                                <form asp-action="UpdateStatus" method="post" style="margin: 0; flex:1;">
-                                    <input type="hidden" name="transactionId" value="@booking.TransactionId" />
-                                    <input type="hidden" name="status" value="Confirmed" />
-                                    <button type="submit" class="vs-submit-btn" style="padding: 5px 15px; font-size: 0.8rem; background: #007bff; border-color: #007bff;">Confirm</button>
-                                </form>
-                                <form asp-action="UpdateStatus" method="post" style="margin: 0; flex:1;">
-                                    <input type="hidden" name="transactionId" value="@booking.TransactionId" />
-                                    <input type="hidden" name="status" value="Declined" />
-                                    <button type="submit" class="vs-submit-btn" style="padding: 5px 15px; font-size: 0.8rem; background: #dc3545; border-color: #dc3545; color: white;">Decline</button>
-                                </form>
-                            }
-                        </div>
-                    </div>
-                }
-            </div>
-
-            <!-- NEW: Pagination Controls container -->
-            <div id="paginationControls" class="vs-pagination"></div>
-
+            else
+            {
+                <span>Verified payments only</span>
+            }
         </div>
     </div>
-</div>
-
-<!-- NEW: Receipt Image Preview Modal -->
-<div class="vs-receipt-modal" id="adminReceiptModal">
-    <div class="vs-receipt-content">
-        <button class="vs-receipt-close" id="closeReceiptModal">&times;</button>
-        <img id="receiptPreviewImg" src="" alt="Client Receipt" />
+    <div class="kpi">
+        <a class="kpi-link" href="@Url.Action("Transactions", "Admin")?status=@Uri.EscapeDataString(PaymentStatus.ForVerification)@pidQuery" aria-label="Review payments"></a>
+        <div class="kpi-label"><svg><use href="#i-receipt" /></svg>Awaiting verification</div>
+        <div class="kpi-value">@Model.PaymentsForVerification</div>
+        <div class="kpi-sub">@Ui.Peso(Model.AmountForVerification) to review</div>
     </div>
-</div>
+    <div class="kpi">
+        <a class="kpi-link" href="@Url.Action("Bookings", "Admin")?status=Pending@pidQuery" aria-label="Pending bookings"></a>
+        <div class="kpi-label"><svg><use href="#i-book" /></svg>Pending requests</div>
+        <div class="kpi-value">@Model.PendingBookings</div>
+        <div class="kpi-sub">of @Model.TotalBookings total bookings</div>
+    </div>
+    <div class="kpi">
+        <a class="kpi-link" href="@Url.Action("Schedule", "Admin")" aria-label="Schedule"></a>
+        <div class="kpi-label"><svg><use href="#i-cal" /></svg>Upcoming shoots</div>
+        <div class="kpi-value">@Model.ConfirmedUpcoming</div>
+        <div class="kpi-sub">@Ui.Peso(Model.OutstandingBalance) balance to collect</div>
+    </div>
+</section>
 
-@section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', async function () {
-            // ==========================================
-            // 1. RECEIPT PREVIEW MODAL LOGIC
-            // ==========================================
-            const receiptModal = document.getElementById('adminReceiptModal');
-            const receiptImg = document.getElementById('receiptPreviewImg');
-            const closeBtn = document.getElementById('closeReceiptModal');
-
-            document.querySelectorAll('.view-receipt-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const imgSrc = this.getAttribute('data-img');
-                    receiptImg.src = imgSrc;
-                    receiptModal.classList.add('open');
-                });
-            });
-
-            closeBtn.addEventListener('click', () => receiptModal.classList.remove('open'));
-            receiptModal.addEventListener('click', (e) => {
-                // Close if user clicks outside the image
-                if (e.target === receiptModal) {
-                    receiptModal.classList.remove('open');
+<section class="grid grid-3-1" style="margin-bottom:18px;">
+    <div class="card">
+        <div class="card-head">
+            <div>
+                <h2>Verified collections</h2>
+                <p>GCash and cash payments confirmed per month, last 6 months</p>
+            </div>
+            <a class="btn btn-sm" href="@Url.Action("PrintReport", "Admin")?from=@DateTime.Today.AddMonths(-5).ToString("yyyy-MM-01")&to=@DateTime.Today.ToString("yyyy-MM-dd")@pidQuery" target="_blank"><svg><use href="#i-print" /></svg>Report</a>
+        </div>
+        <div class="chart" role="img" aria-label="Monthly verified collections">
+            <div class="chart-grid">
+                @for (int i = ticks; i >= 0; i--)
+                {
+                    <div><span>@Ui.PesoShort(top / ticks * i)</span></div>
                 }
-            });
-
-            // ==========================================
-            // 2. PAGINATION LOGIC (5 Items Per Page)
-            // ==========================================
-            const cards = document.querySelectorAll('.admin-booking-card');
-            const itemsPerPage = 5;
-            let currentPage = 1;
-            const totalPages = Math.ceil(cards.length / itemsPerPage);
-            const paginationContainer = document.getElementById('paginationControls');
-
-            function showPage(page) {
-                currentPage = page;
-                const start = (page - 1) * itemsPerPage;
-                const end = start + itemsPerPage;
-
-                cards.forEach((card, index) => {
-                    if (index >= start && index < end) {
-                        card.style.display = 'block';
-                    } else {
-                        card.style.display = 'none';
+            </div>
+            @for (int i = 0; i < Model.Monthly.Count; i++)
+            {
+                var m = Model.Monthly[i];
+                var h = top == 0 ? 0 : (double)(m.Amount / top) * 100;
+                <div class="chart-col @(m.Amount == 0 ? "zero" : "") @(i == Model.Monthly.Count - 1 ? "current" : "")" tabindex="0">
+                    <div class="bar-area"><div class="bar" style="height:@(h.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%; animation-delay:@(i * 70)ms"></div></div>
+                    <div class="lbl">@m.Label[..3]</div>
+                    <div class="chart-tip"><b>@Ui.Peso(m.Amount)</b><span>@m.Label · @m.Bookings new booking@(m.Bookings == 1 ? "" : "s")</span></div>
+                </div>
+            }
+        </div>
+        <details style="margin-top:10px;">
+            <summary class="hint" style="cursor:pointer;">View as table</summary>
+            <table class="tbl" style="margin-top:8px;">
+                <thead><tr><th>Month</th><th class="right">Collected</th><th class="right">New bookings</th></tr></thead>
+                <tbody>
+                    @foreach (var m in Model.Monthly)
+                    {
+                        <tr><td>@m.Label</td><td class="right num">@Ui.Peso(m.Amount)</td><td class="right num">@m.Bookings</td></tr>
                     }
-                });
-                renderPaginationButtons();
+                </tbody>
+            </table>
+        </details>
+    </div>
+
+    <div class="card">
+        <div class="card-head"><div><h2>Bookings by status</h2><p>All time</p></div></div>
+        <div class="breakdown">
+            @foreach (var s in BookingStatus.All)
+            {
+                var c = Model.StatusCounts.TryGetValue(s, out var v) ? v : 0;
+                <a class="breakdown-row" href="@Url.Action("Bookings", "Admin")?status=@s@pidQuery" style="color:inherit;">
+                    <span>@s</span>
+                    <span class="track"><span class="fill" style="display:block;width:@(c * 100 / statusTotal)%;background:@statusColors[s]"></span></span>
+                    <span class="count">@c</span>
+                </a>
             }
+        </div>
+    </div>
+</section>
 
-            function renderPaginationButtons() {
-                paginationContainer.innerHTML = '';
-                if (totalPages <= 1) return; // Don't show pagination if 5 or fewer items
-
-                for (let i = 1; i <= totalPages; i++) {
-                    const btn = document.createElement('button');
-                    btn.className = `vs-page-btn ${i === currentPage ? 'active' : ''}`;
-                    btn.innerText = i;
-                    btn.addEventListener('click', () => showPage(i));
-                    paginationContainer.appendChild(btn);
-                }
+<section class="grid grid-2">
+    <div class="card">
+        <div class="card-head">
+            <div><h2>Upcoming sessions</h2><p>Pending and confirmed shoots</p></div>
+            <a class="btn btn-sm btn-ghost" href="@Url.Action("Schedule", "Admin")">Calendar &rarr;</a>
+        </div>
+        @if (!Model.Upcoming.Any())
+        {
+            <div class="empty"><svg><use href="#i-cal" /></svg><b>No upcoming sessions</b>New booking requests will appear here.</div>
+        }
+        <div class="list">
+            @foreach (var b in Model.Upcoming)
+            {
+                <a class="list-item" href="@Url.Action("BookingDetails", "Admin", new { id = b.TransactionId })">
+                    <span class="date-chip"><small>@b.TargetDate.ToString("MMM")</small><b>@b.TargetDate.Day</b></span>
+                    <span class="meta">
+                        <b>@b.ClientName</b>
+                        <small>@b.TimeRange · @b.Category · @b.Photographer?.Name</small>
+                    </span>
+                    @Ui.Pill(b.Status)
+                </a>
             }
+        </div>
+    </div>
 
-            // Initialize first page if there are cards
-            if (cards.length > 0) {
-                showPage(1);
+    <div class="card">
+        <div class="card-head">
+            <div><h2>Latest transactions</h2><p>Most recent payments received</p></div>
+            <a class="btn btn-sm btn-ghost" href="@Url.Action("Transactions", "Admin")">All transactions &rarr;</a>
+        </div>
+        @if (!Model.RecentPayments.Any())
+        {
+            <div class="empty"><svg><use href="#i-wallet" /></svg><b>No transactions yet</b>GCash payments from clients will show up here.</div>
+        }
+        <div class="list">
+            @foreach (var p in Model.RecentPayments)
+            {
+                <a class="list-item" href="@Url.Action("BookingDetails", "Admin", new { id = p.BookingTransactionId })">
+                    <span class="meta">
+                        <b>@p.Booking?.ClientName</b>
+                        <small class="mono">@p.ReceiptNumber</small> <small>· @p.Method @p.Type · @Ui.Stamp(p.CreatedAt)</small>
+                    </span>
+                    <span class="amt">@Ui.Peso(p.Amount)<small>@Ui.Pill(p.Status)</small></span>
+                </a>
             }
-
-            // ==========================================
-            // 3. CALENDAR LOGIC
-            // ==========================================
-            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-            let currentMonth = new Date().getMonth();
-            let currentYear = new Date().getFullYear();
-            let scheduleData = { bookings: [], blockedDates: [] };
-
-            async function fetchSchedule() {
-                const response = await fetch('/Admin/GetScheduleData');
-                scheduleData = await response.json();
-                renderCalendar(currentMonth, currentYear);
-            }
-
-            function getStatusClass(year, month, day) {
-                const m = String(month + 1).padStart(2, '0');
-                const d = String(day).padStart(2, '0');
-                const dateString = `${year}-${m}-${d}`;
-
-                if (scheduleData.blockedDates.some(b => b.date.startsWith(dateString))) return 'status-blocked';
-
-                const booking = scheduleData.bookings.find(b => b.targetDate.startsWith(dateString));
-                if (booking) {
-                    if (booking.status === 'Pending') return 'status-pending';
-                    if (booking.status === 'Confirmed') return 'status-confirmed';
-                }
-                return 'status-available';
-            }
-
-            async function toggleDate(year, month, day, currentStatus) {
-                if(currentStatus === 'status-pending' || currentStatus === 'status-confirmed') return;
-
-                const m = String(month + 1).padStart(2, '0');
-                const d = String(day).padStart(2, '0');
-
-                await fetch('/Admin/ToggleBlockDate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ date: `${year}-${m}-${d}` })
-                });
-
-                fetchSchedule();
-            }
-
-            function renderCalendar(month, year) {
-                const grid = document.getElementById('adminCalendarGrid');
-                const disp = document.getElementById('adminMonthYear');
-                grid.innerHTML = "";
-                disp.innerText = monthNames[month] + " " + year;
-
-                dayNames.forEach(day => {
-                    const header = document.createElement('div');
-                    header.className = 'vs-day-name';
-                    header.innerText = day;
-                    grid.appendChild(header);
-                });
-
-                const firstDay = new Date(year, month, 1).getDay();
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-                for (let i = 0; i < firstDay; i++) {
-                    grid.appendChild(document.createElement('div'));
-                }
-
-                for (let i = 1; i <= daysInMonth; i++) {
-                    const cell = document.createElement('div');
-                    const cellDate = new Date(year, month, i);
-
-                    if (cellDate.setHours(0,0,0,0) < new Date().setHours(0,0,0,0)) {
-                        cell.className = 'vs-day-cell disabled';
-                    } else {
-                        const statusClass = getStatusClass(year, month, i);
-                        cell.className = `vs-day-cell ${statusClass}`;
-                        cell.addEventListener('click', () => toggleDate(year, month, i, statusClass));
-                    }
-
-                    cell.innerHTML = `<span class="vs-day-number">${i}</span>`;
-                    grid.appendChild(cell);
-                }
-            }
-
-            document.getElementById('adminPrevMonth').addEventListener('click', () => {
-                currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-                renderCalendar(currentMonth, currentYear);
-            });
-
-            document.getElementById('adminNextMonth').addEventListener('click', () => {
-                currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-                renderCalendar(currentMonth, currentYear);
-            });
-
-            fetchSchedule();
-        });
-    </script>
-}
+        </div>
+    </div>
+</section>

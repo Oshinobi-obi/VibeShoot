@@ -1,0 +1,49 @@
+@model VibeShoot.Models.TrackViewModel
+@{
+    ViewData["Title"] = "Track Booking";
+    Layout = "_Layout";
+}
+
+<link rel="stylesheet" href="~/css/Book.css" asp-append-version="true" />
+
+<div class="vs-iris-in" aria-hidden="true"></div>
+
+<div class="vs-page">
+    <div class="vs-bg-layer">
+        <div class="vs-bokeh"></div>
+        <div class="vs-bokeh blur"></div>
+        <div class="vs-bokeh"></div>
+    </div>
+    <div class="vs-grain"></div>
+    <div class="vs-vignette"></div>
+
+    <main class="vs-book" style="grid-template-columns:minmax(0,520px);justify-content:center;padding-top:90px;">
+        <header class="vs-book-hero" style="flex-direction:column;text-align:center;">
+            <a class="vs-eyebrow-sm" href="/photographers" style="text-decoration:none;">VibeShoot</a>
+            <div>
+                <h1 class="vs-title">Track your booking</h1>
+                <p class="vs-subtitle">See your booking status, payment verification and print your receipt.</p>
+            </div>
+        </header>
+
+        @if (!string.IsNullOrEmpty(Model.Error))
+        {
+            <div class="vs-alert" role="alert">@Model.Error</div>
+        }
+
+        <form class="vs-panel-card" method="post" action="/booking/track">
+            @Html.AntiForgeryToken()
+            <div class="vs-field">
+                <label class="vs-label" for="tx">Transaction ID</label>
+                <input id="tx" name="TransactionId" value="@Model.TransactionId" placeholder="VS-20261003-XXXXXX" required autocomplete="off" style="text-transform:uppercase;font-family:ui-monospace,Consolas,monospace;" />
+                <span class="help">Shown after you booked and on your receipt.</span>
+            </div>
+            <div class="vs-field">
+                <label class="vs-label" for="mobile">Mobile number used when booking</label>
+                <input id="mobile" name="ContactNumber" value="@Model.ContactNumber" type="tel" inputmode="numeric" placeholder="0917-123-4567" required />
+            </div>
+            <button class="vs-btn vs-btn-gold" type="submit" style="width:100%;">Find my booking</button>
+            <p style="text-align:center;margin:16px 0 0;font-size:.82rem;"><a href="/photographers" style="color:var(--text-2);">&larr; Back to photographers</a></p>
+        </form>
+    </main>
+</div>

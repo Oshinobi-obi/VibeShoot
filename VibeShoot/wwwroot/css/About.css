@@ -350,3 +350,42 @@
         justify-content: center;
     }
 }
+.vs-about-cta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 6px 0 22px;
+}
+
+.vs-cta-primary, .vs-cta-ghost {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 12px 22px;
+    border-radius: 999px;
+    transition: transform .2s ease, opacity .2s ease, border-color .2s ease, color .2s ease;
+}
+
+.vs-cta-primary {
+    background: linear-gradient(135deg, #e3bf4a, rgb(201,162,39));
+    color: #15120a;
+    box-shadow: 0 10px 26px rgba(201,162,39,0.25);
+}
+
+    .vs-cta-primary:hover {
+        transform: translateY(-2px);
+        color: #15120a;
+    }
+
+.vs-cta-ghost {
+    border: 1px solid rgba(245,245,242,0.25);
+    color: rgba(245,245,242,0.85);
+}
+
+    .vs-cta-ghost:hover {
+        border-color: rgba(201,162,39,0.7);
+        color: rgb(201,162,39);
+    }

@@ -1,19 +1,27 @@
-﻿@model VibeShoot.Models.PhotographerProfile
+@model VibeShoot.Models.BookPageViewModel
 @{
-    ViewData["Title"] = "Schedule & Booking";
+    ViewData["Title"] = "Book a Session";
     Layout = "_Layout";
+    var p = Model.Photographer;
+    var packagesJson = System.Text.Json.JsonSerializer.Serialize(Model.Packages.Select(k => new
+    {
+        id = k.Id,
+        category = k.Category,
+        name = k.Name,
+        price = k.Price,
+        hours = k.DurationHours,
+        inclusions = k.InclusionList
+    }));
+    var priced = Model.Packages.Where(k => k.Price > 0).OrderBy(k => k.Price).ToList();
 }
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="~/css/Book.css" asp-append-version="true" />
 
 <div class="vs-iris-in" aria-hidden="true"></div>
 
-<partial name="_PhotographerNav" model="@(new VibeShoot.Models.NavContext { Slug = Model?.Slug ?? "ginger-snaps", ActiveTab = "Schedule" })" />
+<partial name="_PhotographerNav" model="@(new VibeShoot.Models.NavContext { Slug = p.Slug, ActiveTab = "Schedule" })" />
 
-<div class="vs-page">
+<div class="vs-page" id="vsPage">
     <div class="vs-bg-layer">
         <div class="vs-bokeh"></div>
         <div class="vs-bokeh blur"></div>
@@ -22,239 +30,242 @@
     <div class="vs-grain"></div>
     <div class="vs-vignette"></div>
 
-    <div class="vs-schedule-wrap">
-        <h1 class="vs-title">Book a Session</h1>
-        <p class="vs-subtitle" style="margin-bottom: 10px;">Select an available date below to request a shoot.</p>
-
-        @if (TempData["ErrorMessage"] != null)
-        {
-            <div style="background: rgba(220, 53, 69, 0.2); border: 1px solid rgba(220, 53, 69, 0.5); color: #ff6b6b; padding: 15px; border-radius: 6px; font-size: 0.95rem; margin-bottom: 20px; text-align: center; max-width: 800px; width: 100%;">
-                @TempData["ErrorMessage"]
+    <main class="vs-book">
+        <header class="vs-book-hero">
+            @if (!string.IsNullOrEmpty(p.LogoPath))
+            {
+                <span class="logo"><img src="@p.LogoPath" alt="@p.Name logo" /></span>
+            }
+            <div>
+                <span class="vs-eyebrow-sm">@p.Name</span>
+                <h1 class="vs-title">Book a Session</h1>
+                <p class="vs-subtitle">Pick an open date, choose your package and secure it with a 50% GCash down payment.</p>
             </div>
-        }
+        </header>
 
-        <div style="display: flex; gap: 15px; margin-bottom: 25px; font-size: 0.85rem; flex-wrap: wrap; justify-content: center; color: rgba(245,245,242,0.8);">
-            <div style="display: flex; align-items: center; gap: 8px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: #28a745;"></div> Available</div>
-            <div style="display: flex; align-items: center; gap: 8px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: #dc3545;"></div> Fully Booked</div>
-            <div style="display: flex; align-items: center; gap: 8px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: #ffc107;"></div> 1 Slot Pending</div>
-            <div style="display: flex; align-items: center; gap: 8px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: #007bff;"></div> 1 Slot Confirmed</div>
-        </div>
-
-        <div class="vs-calendar">
-            <div class="vs-calendar-header">
-                <button class="vs-calendar-btn" id="prevMonth" aria-label="Previous Month">
-                    <svg viewBox="0 0 24 24"><path d="M14.7 5.3 8 12l6.7 6.7 1.4-1.4L10.8 12l5.3-5.3z" /></svg>
-                </button>
-                <div class="vs-month-year" id="monthYearDisplay">Month Year</div>
-                <button class="vs-calendar-btn" id="nextMonth" aria-label="Next Month">
-                    <svg viewBox="0 0 24 24"><path d="M9.3 5.3 16 12l-6.7 6.7-1.4-1.4L13.2 12 7.9 6.7z" /></svg>
-                </button>
+        <section class="vs-panel-card" aria-label="Availability calendar">
+            <div class="vs-cal-head">
+                <button class="vs-cal-btn" id="prevMonth" aria-label="Previous month"><svg viewBox="0 0 24 24"><path d="M14.7 5.3 8 12l6.7 6.7 1.4-1.4L10.8 12l5.3-5.3z" /></svg></button>
+                <h2 id="monthTitle">—</h2>
+                <button class="vs-cal-btn" id="nextMonth" aria-label="Next month"><svg viewBox="0 0 24 24"><path d="M9.3 5.3 16 12l-6.7 6.7-1.4-1.4L13.2 12 7.9 6.7z" /></svg></button>
             </div>
-            <div class="vs-days-grid" id="calendarGrid"></div>
-        </div>
-    </div>
-</div>
+            <div class="vs-cal-grid" id="calGrid"></div>
+            <div class="vs-legend">
+                <span><i style="background:var(--ok)"></i>Available</span>
+                <span><i style="background:var(--warn)"></i>1 slot left</span>
+                <span><i style="background:var(--bad)"></i>Fully booked / day off</span>
+            </div>
+        </section>
 
-<div class="vs-modal" id="bookingModal">
-    <div class="vs-modal-content">
-        <button class="vs-modal-close" id="closeModal">&times;</button>
-        <h2 class="vs-form-title">Booking Request</h2>
-        <div class="vs-form-date" id="selectedDateDisplay">Target Date: ---</div>
-
-        <form id="bookingForm" action="/photographer/@(Model?.Slug ?? "ginger-snaps")/schedule" method="post" enctype="multipart/form-data">
-            <input type="hidden" name="photographer" value="@(Model?.Slug ?? "ginger-snaps")" />
-            <input type="hidden" id="selectedDateInput" name="Date" />
-            <input type="hidden" id="formTxId" name="TransactionId" />
-            <input type="hidden" id="formAmountPaid" name="AmountPaid" />
-
-            <div class="vs-form-group">
-                <label>Full Name</label>
-                <input type="text" autocomplete="off" name="FullName" id="inputFullName" required placeholder="Juan Dela Cruz" />
+        <aside class="vs-side">
+            <div class="vs-panel-card">
+                <h3>How booking works</h3>
+                <ol class="vs-steps">
+                    <li><span><b>Choose a date</b>Green dates are open. Up to 2 sessions per day.</span></li>
+                    <li><span><b>Pick a package &amp; time</b>We leave 2 hours between shoots.</span></li>
+                    <li><span><b>Pay 50% via GCash</b>Scan the QR and upload your receipt.</span></li>
+                    <li><span><b>Get your receipt</b>Print or save it — we'll confirm once verified.</span></li>
+                </ol>
             </div>
 
-            <div class="vs-form-group">
-                <label>Contact Number</label>
-                <input type="tel" autocomplete="off" name="ContactNumber" id="contactNumberInput" required placeholder="09XX-XXX-XXXX" maxlength="13" />
-            </div>
-
-            <div class="vs-form-group">
-                <label>Facebook / Messenger Link</label>
-                <input type="url" autocomplete="off" name="SocialLink" placeholder="https://facebook.com/yourprofile" />
-            </div>
-
-            <div class="vs-form-group">
-                <label>Venue / Location</label>
-                <input type="text" autocomplete="off" name="Venue" id="inputVenue" required placeholder="Event location" />
-            </div>
-
-            <div class="vs-form-group">
-                <label>Category</label>
-                <select id="categorySelect" name="Category" required>
-                    <option value="" disabled selected>Select an Event Category</option>
-                    <option value="Birthday">Birthday</option>
-                    <option value="Baptism">Baptism</option>
-                    <option value="Photoshoot">Photoshoot</option>
-                    <option value="Wedding">Wedding</option>
-                </select>
-            </div>
-
-            <div style="display: flex; gap: 15px; margin-bottom: 18px;">
-                <div style="flex: 1;">
-                    <label style="display: block; font-size: 0.85rem; color: rgba(245,245,242,0.6); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">Start Time</label>
-                    <select name="TimeSlot" id="timeSlotInput" required style="background: rgba(22, 22, 25, 0.95); border: 1px solid rgba(201, 162, 39, 0.4); color: white; padding: 12px 14px; border-radius: 6px; width: 100%; font-family: 'Poppins', sans-serif; cursor: pointer;">
-                        <option value="" disabled selected style="background: #161619; color: white;">Select a Time</option>
-                    </select>
+            @if (priced.Any())
+            {
+                <div class="vs-panel-card">
+                    <h3>Starting rates</h3>
+                    @foreach (var k in priced.GroupBy(k => k.Category).Select(g => g.First()))
+                    {
+                        <div class="vs-pkg-mini"><span>@k.Category · @k.Name</span><b>@Ui.Peso(k.Price)</b></div>
+                    }
                 </div>
-                <div style="flex: 1;">
-                    <label style="display: block; font-size: 0.85rem; color: rgba(245,245,242,0.6); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">End Time</label>
-                    <input type="text" id="endTimeDisplay" readonly placeholder="Auto-calculated" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); padding: 12px 14px; border-radius: 6px; width: 100%; font-family: 'Poppins', sans-serif; cursor: not-allowed;" />
-                    <input type="hidden" name="EndTime" id="endTimeInput" />
-                </div>
+            }
+
+            <div class="vs-panel-card">
+                <a class="vs-track-link" href="/booking/track">
+                    <span><b>Already booked?</b><small>Track your booking, view or print your receipt</small></span>
+                    <span aria-hidden="true">&rarr;</span>
+                </a>
             </div>
-            <span style="font-size: 0.75rem; color: rgba(245,245,242,0.5); margin-top: -10px; margin-bottom: 18px; display: block;">Operating hours: 8:00 AM to 8:00 PM</span>
+        </aside>
+    </main>
+</div>
 
-            <div class="vs-form-group" id="packagesWrapper" style="display:none;">
-                <label>Select Package</label>
-                <div class="vs-packages-container" id="packagesContainer"></div>
+<!-- Booking wizard -->
+<div class="vs-modal" id="wizard" role="dialog" aria-modal="true" aria-labelledby="wzTitle">
+    <form class="vs-wizard" id="bookingForm" enctype="multipart/form-data" novalidate>
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Date" id="fDate" />
+        <input type="hidden" name="StartTime" id="fStart" />
+        <input type="hidden" name="PackageId" id="fPackage" />
+
+        <div class="vs-wz-main">
+            <div class="vs-wz-top">
+                <h2 id="wzTitle">Book your session</h2>
+                <button type="button" class="vs-x" data-close aria-label="Close">&times;</button>
+            </div>
+            <div class="vs-stepper" id="stepper">
+                <div><i></i><span>Package</span></div>
+                <div><i></i><span>Details</span></div>
+                <div><i></i><span>Payment</span></div>
+                <div><i></i><span>Done</span></div>
             </div>
 
-            <div class="vs-tc-group">
-                <input type="checkbox" id="tcCheckbox" required />
-                <label for="tcCheckbox">I agree to the <a href="#" id="openTcModal">Terms and Conditions</a> *</label>
+            <div class="vs-wz-body">
+                <!-- Step 1: package + time -->
+                <section class="vs-step" data-step="0">
+                    <span class="vs-label">Event type</span>
+                    <div class="vs-chips" id="catChips"></div>
+                    <span class="vs-label">Package</span>
+                    <div class="vs-pkgs" id="pkgList"></div>
+                    <span class="vs-label">Start time</span>
+                    <div class="vs-slots" id="slotList"></div>
+                    <span class="help" id="slotHelp" style="display:block;font-size:.76rem;color:var(--text-3);margin-top:8px;">Operating hours 8:00 AM – 8:00 PM. Times too close to another session are unavailable.</span>
+                </section>
+
+                <!-- Step 2: client details -->
+                <section class="vs-step" data-step="1">
+                    <div class="vs-field"><label class="vs-label" for="fName">Full name *</label><input id="fName" name="FullName" autocomplete="name" placeholder="Juan Dela Cruz" required maxlength="128" /></div>
+                    <div class="vs-row">
+                        <div class="vs-field"><label class="vs-label" for="fMobile">Mobile number *</label><input id="fMobile" name="ContactNumber" type="tel" inputmode="numeric" autocomplete="tel" placeholder="0917-123-4567" maxlength="13" required /><span class="help">Used to track your booking.</span></div>
+                        <div class="vs-field"><label class="vs-label" for="fEmail">Email</label><input id="fEmail" name="Email" type="email" autocomplete="email" placeholder="you@example.com" maxlength="128" /></div>
+                    </div>
+                    <div class="vs-field"><label class="vs-label" for="fSocial">Facebook / Messenger link</label><input id="fSocial" name="SocialLink" placeholder="facebook.com/yourprofile" maxlength="512" /></div>
+                    <div class="vs-field"><label class="vs-label" for="fVenue">Venue / location *</label><input id="fVenue" name="Venue" placeholder="e.g. Fernwood Gardens, Quezon City" required maxlength="256" /></div>
+                    <div class="vs-field"><label class="vs-label" for="fNotes">Notes for the photographer</label><textarea id="fNotes" name="Notes" placeholder="Theme, number of guests, special requests…" maxlength="1000"></textarea></div>
+                    <label class="vs-check"><input type="checkbox" id="fTerms" name="AcceptedTerms" value="true" /> <span>I have read and agree to the <a href="#" id="openTerms">Terms &amp; Conditions</a>, including the non-refundable 50% down payment.</span></label>
+                </section>
+
+                <!-- Step 3: payment -->
+                <section class="vs-step" data-step="2">
+                    <div id="payOnline">
+                        <div class="vs-pay">
+                            <div>
+                                @if (!string.IsNullOrEmpty(p.GCashQrPath))
+                                {
+                                    <div class="vs-qr"><span class="gcash">GCash</span><img src="@p.GCashQrPath" alt="@p.Name GCash QR code" /></div>
+                                    @if (!string.IsNullOrEmpty(p.GCashAccountName) || !string.IsNullOrEmpty(p.GCashNumber))
+                                    {
+                                        <p style="text-align:center;font-size:.8rem;color:var(--text-2);margin:12px 0 0;">@p.GCashAccountName<br />@p.GCashNumber</p>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="vs-qr-missing">The photographer hasn't uploaded a GCash QR yet. Please message them on Facebook for payment details.</div>
+                                }
+                            </div>
+                            <div>
+                                <div class="vs-amount">
+                                    <div><small>50% down payment</small><b id="payAmount">₱0.00</b></div>
+                                    <button type="button" class="vs-copy" id="copyAmount">Copy amount</button>
+                                </div>
+                                <ol class="vs-howto">
+                                    <li>Open GCash and tap <b>Pay QR</b>, then scan the code.</li>
+                                    <li>Send exactly the amount shown above.</li>
+                                    <li>Enter the 13-digit reference number and upload a screenshot of the GCash receipt.</li>
+                                </ol>
+                                <div class="vs-field"><label class="vs-label" for="fRef">GCash reference no. *</label><input id="fRef" name="ReferenceNumber" inputmode="numeric" placeholder="e.g. 1234 567 890123" maxlength="24" /></div>
+                                <label class="vs-drop" id="dropZone">
+                                    <input type="file" id="fReceipt" name="ReceiptImage" accept="image/*" />
+                                    <span id="dropContent"><b>Upload GCash receipt *</b>Tap to choose a screenshot, or drop it here</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="payQuote" class="vs-quote-note" style="display:none;">
+                        <b>No payment needed yet.</b><br />
+                        This is a custom package. Submit your request and the photographer will contact you with a quotation. You'll pay the 50% down payment once the price is agreed.
+                    </div>
+                </section>
+
+                <!-- Step 4: done -->
+                <section class="vs-step" data-step="3">
+                    <div class="vs-done">
+                        <div class="vs-done-ring"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7" /></svg></div>
+                        <h3>Request sent!</h3>
+                        <p id="doneText">Your booking is now pending. The photographer will verify your GCash payment and confirm your slot.</p>
+                        <div class="vs-txid"><span id="doneTx">—</span><button type="button" class="vs-copy" id="copyTx">Copy</button></div>
+                        <div class="vs-done-actions">
+                            <a class="vs-btn vs-btn-gold" id="receiptLink" href="#">View &amp; print receipt</a>
+                            <button type="button" class="vs-btn vs-btn-line" data-close>Done</button>
+                        </div>
+                        <p style="font-size:.78rem;margin-top:16px;">Save your Transaction ID — use it with your mobile number on <a href="/booking/track" style="color:var(--gold-2)">Track Booking</a>.</p>
+                    </div>
+                </section>
             </div>
 
-            <input type="file" id="formReceiptFile" name="ReceiptImage" style="display:none;" />
-            <button type="submit" class="vs-submit-btn" id="submitBtn" disabled>Confirm Booking</button>
-        </form>
-    </div>
-</div>
-
-<div class="vs-modal" id="tcModal">
-    <div class="vs-modal-content">
-        <h2 class="vs-form-title" style="text-align: center;">Terms & Conditions</h2>
-        <div class="vs-tc-body">
-            <h4>Payment Terms</h4>
-            <ul>
-                <li>Down Payment: 50% (non-refundable) due upon booking.</li>
-                <li>Balance: Due on or before the event date / after the session.</li>
-                <li>Payment Method: GCash for down payment, can be Cash or Gcash for the remaining balance.</li>
-            </ul>
-            <h4>Cancellation Policy</h4>
-            <ul>
-                <li>If the Client cancels the booking, the down payment is non-refundable.</li>
-                <li>If the Photographer cancels, all payments will be refunded.</li>
-            </ul>
-            <h4>Rescheduling</h4>
-            <ul>
-                <li>Client may request to reschedule the event at least 10 days before the scheduled date.</li>
-                <li>Photographer will accommodate subject to availability.</li>
-            </ul>
-            <h4>Copyright & Usage Rights</h4>
-            <ul>
-                <li>The Photographer retains the copyright to all photos.</li>
-                <li>The Client is granted personal use rights (printing, sharing online, etc.).</li>
-                <li>For commercial use (ads, promotions, real estate listings, etc.), an additional fee applies.</li>
-            </ul>
-            <h4>Liability</h4>
-            <ul>
-                <li>Photographer is not responsible for circumstances beyond control (e.g., bad weather, venue restrictions, accidents).</li>
-                <li>If equipment failure or unforeseen issues prevent photo delivery, liability is limited to a refund of payments received.</li>
-            </ul>
-            <h4>Additional Charges & Client Responsibilities</h4>
-            <ul>
-                <li>Kindly note that food and transportation for the team will be covered by the client.</li>
-                <li>If we go beyond the package's time limit, an additional ₱500 for (photo only) & ₱1000 (with video) per hour will be added.</li>
-            </ul>
-            <p class="vs-tc-closing">
-                Booking your session confirms that you've read and accepted the terms listed above.<br />
-                Thank you so much, we are excited to capture moments with you!
-            </p>
-        </div>
-        <div class="vs-tc-actions">
-            <button type="button" class="vs-btn-decline" id="btnDecline">Decline</button>
-            <button type="button" class="vs-btn-agree" id="btnAgree">I Agree</button>
-        </div>
-    </div>
-</div>
-
-<div class="vs-modal" id="paymentNotifModal">
-    <div class="vs-modal-content" style="text-align: center; max-width: 450px;">
-        <h2 class="vs-form-title" style="color: rgb(201,162,39);">Booking Confirmation!</h2>
-        <p style="color: rgba(245,245,242,0.8); margin: 20px 0; font-size: 0.95rem; line-height: 1.6;">
-            A 50% Downpayment must be made upon securing a schedule with the Photographer.
-        </p>
-        <button type="button" class="vs-submit-btn" id="btnProceedToQr">Proceed to Payment</button>
-    </div>
-</div>
-
-<div class="vs-modal" id="qrModal">
-    <div class="vs-modal-content" style="text-align: center; max-width: 420px;">
-        <h2 class="vs-form-title">GCash Payment</h2>
-        <p style="color: rgba(245,245,242,0.8); font-size: 0.9rem; margin-bottom: 5px;">Scan the QR code below to pay the 50% downpayment.</p>
-
-        <p style="color: rgba(245,245,242,0.6); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0;">Amount to Pay</p>
-        <h3 id="qrAmountDisplay" style="color: rgb(201,162,39); font-family: 'Anton', sans-serif; font-size: 2.2rem; margin-top: 0; margin-bottom: 15px; letter-spacing: 0.05em;"></h3>
-
-        <div style="background: white; padding: 15px; border-radius: 12px; margin: 0 auto 20px; width: fit-content;">
-            <img id="gcashQrImage" src="" alt="Photographer GCash QR" style="width: 200px; height: 200px; object-fit: contain;" />
-        </div>
-
-        <p id="qrTimerText" style="color: rgb(201,162,39); font-weight: 500; font-size: 0.95rem; margin-bottom: 15px;">
-            Please wait <span id="qrTime">5</span> seconds...
-        </p>
-
-        <button type="button" class="vs-submit-btn" id="btnAlreadyPaid" style="display: none;">Already Paid?</button>
-    </div>
-</div>
-
-<div class="vs-modal" id="uploadModal">
-    <div class="vs-modal-content" style="text-align: center; max-width: 420px;">
-        <h2 class="vs-form-title">Upload Receipt</h2>
-        <p style="color: rgba(245,245,242,0.8); margin-bottom: 25px; font-size: 0.9rem;">Please upload the GCash Receipt here to verify your booking.</p>
-
-        <div class="vs-form-group">
-            <input type="file" id="receiptFile" accept="image/*" required style="background: rgba(255,255,255,0.05); padding: 15px; cursor: pointer;" />
-        </div>
-
-        <button type="button" class="vs-submit-btn" id="btnSubmitReceipt" style="margin-top: 10px;">Submit Receipt</button>
-    </div>
-</div>
-
-<div class="vs-modal" id="receiptModal">
-    <div class="vs-modal-content" style="max-width: 480px; padding: 25px;">
-
-        <div id="receiptContent" style="background: #0a0a0c; background-image: radial-gradient(ellipse at 50% 30%, #161619 0%, #0a0a0c 70%); color: #f5f5f2; padding: 50px 30px 70px 30px; border-radius: 12px; text-align: left; font-family: 'Poppins', sans-serif; border: 1px solid rgba(201,162,39,0.3); position: relative; overflow: hidden; box-sizing: border-box;">
-
-            <div style="position: absolute; width: 150px; height: 150px; background: radial-gradient(circle, rgba(201,162,39,0.15), transparent 70%); top: -20px; left: -20px; border-radius: 50%;"></div>
-            <div style="position: absolute; width: 100px; height: 100px; background: radial-gradient(circle, rgba(58,90,120,0.15), transparent 70%); bottom: 20px; right: -20px; border-radius: 50%;"></div>
-
-            <div style="position: relative; z-index: 2;">
-                <h2 style="font-family: 'Anton', sans-serif; text-align: center; margin: 0 0 30px 0; line-height: 1; font-size: 2.5rem; letter-spacing: 0.08em; color: rgb(201,162,39);">VIBESHOOT</h2>
-
-                <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Transaction ID:</strong> <span id="recTxId" style="font-weight: 500;"></span></p>
-                <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Client Name:</strong> <span id="recName" style="font-weight: 500;"></span></p>
-                <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Time:</strong> <span id="recTime" style="font-weight: 500; color: rgb(201,162,39);"></span></p>
-                <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Venue:</strong> <span id="recVenue" style="font-weight: 500;"></span></p>
-                <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Category:</strong> <span id="recCategory" style="font-weight: 500;"></span></p>
-                <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong style="color: rgba(245,245,242,0.6); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: inline-block; width: 140px;">Package Type:</strong> <span id="recPackage" style="font-weight: 500;"></span></p>
-
-                <hr style="border: none; border-top: 1px solid rgba(245,245,242,0.15); margin: 25px 0;" />
-
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: rgba(245,245,242,0.8); text-transform: uppercase; font-size: 0.9rem; letter-spacing: 0.1em;">Amount Paid (50%)</span>
-                    <span id="recAmount" style="color: rgb(201,162,39); font-weight: 600; font-size: 1.4rem; font-family: 'Anton', sans-serif; letter-spacing: 0.05em;"></span>
-                </div>
+            <div class="vs-wz-foot" id="wzFoot">
+                <button type="button" class="vs-btn vs-btn-line" id="btnBack">Back</button>
+                <span class="err" id="wzError" role="alert"></span>
+                <button type="button" class="vs-btn vs-btn-gold" id="btnNext">Continue</button>
             </div>
         </div>
 
-        <button type="button" class="vs-submit-btn" id="btnDownloadReceipt" style="margin-top: 25px;">Download Receipt</button>
+        <aside class="vs-wz-summary" aria-label="Booking summary">
+            <h4>Your booking</h4>
+            <div class="vs-sum-date" id="sumDate">—<small id="sumTime">Choose a time</small></div>
+            <div>
+                <div class="vs-sum-row"><span>Photographer</span><span>@p.Name</span></div>
+                <div class="vs-sum-row"><span>Event</span><span id="sumCat">—</span></div>
+                <div class="vs-sum-row"><span>Package</span><span id="sumPkg">—</span></div>
+                <div class="vs-sum-row"><span>Duration</span><span id="sumDur">—</span></div>
+            </div>
+            <div class="vs-sum-total">
+                <div><span>Package price</span><span id="sumPrice">—</span></div>
+                <div class="due"><span>Due now (50%)</span><span id="sumDue">—</span></div>
+            </div>
+        </aside>
+    </form>
+</div>
+
+<!-- Terms & Conditions -->
+<div class="vs-modal" id="termsModal" role="dialog" aria-modal="true" aria-labelledby="termsTitle" style="z-index:1100;">
+    <div class="vs-terms">
+        <h2 id="termsTitle">Terms &amp; Conditions</h2>
+        <h4>Payment Terms</h4>
+        <ul>
+            <li>Down Payment: 50% (non-refundable) due upon booking.</li>
+            <li>Balance: Due on or before the event date / after the session.</li>
+            <li>Payment Method: GCash for down payment, can be Cash or GCash for the remaining balance.</li>
+        </ul>
+        <h4>Cancellation Policy</h4>
+        <ul>
+            <li>If the Client cancels the booking, the down payment is non-refundable.</li>
+            <li>If the Photographer cancels, all payments will be refunded.</li>
+        </ul>
+        <h4>Rescheduling</h4>
+        <ul>
+            <li>Client may request to reschedule the event at least 10 days before the scheduled date.</li>
+            <li>Photographer will accommodate subject to availability.</li>
+        </ul>
+        <h4>Copyright &amp; Usage Rights</h4>
+        <ul>
+            <li>The Photographer retains the copyright to all photos.</li>
+            <li>The Client is granted personal use rights (printing, sharing online, etc.).</li>
+            <li>For commercial use (ads, promotions, real estate listings, etc.), an additional fee applies.</li>
+        </ul>
+        <h4>Liability</h4>
+        <ul>
+            <li>Photographer is not responsible for circumstances beyond control (e.g., bad weather, venue restrictions, accidents).</li>
+            <li>If equipment failure or unforeseen issues prevent photo delivery, liability is limited to a refund of payments received.</li>
+        </ul>
+        <h4>Additional Charges &amp; Client Responsibilities</h4>
+        <ul>
+            <li>Kindly note that food and transportation for the team will be covered by the client.</li>
+            <li>If we go beyond the package's time limit, an additional ₱500 for (photo only) &amp; ₱1000 (with video) per hour will be added.</li>
+        </ul>
+        <p style="text-align:center;font-style:italic;color:var(--gold-2);margin-top:20px;">Booking your session confirms that you've read and accepted the terms listed above.<br />Thank you so much, we are excited to capture moments with you!</p>
+        <div class="actions">
+            <button type="button" class="vs-btn vs-btn-line" id="termsDecline">Decline</button>
+            <button type="button" class="vs-btn vs-btn-gold" id="termsAgree">I agree</button>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        window.currentPhotographerSlug = '@(Model?.Slug ?? "ginger-snaps")';
+        window.vsBooking = {
+            slug: '@p.Slug',
+            packages: @Html.Raw(packagesJson)
+        };
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="~/js/Book.js" asp-append-version="true"></script>
 }

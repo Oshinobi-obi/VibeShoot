@@ -1,4 +1,5 @@
-﻿@{
+﻿@model List<VibeShoot.Models.PhotographerCard>
+@{
     ViewData["Title"] = "Choose Your Photographer";
     Layout = "_Layout";
 }
@@ -25,36 +26,26 @@
         <p class="vs-select-sub">Pick the eye behind the lens for your shoot.</p>
 
         <div class="vs-photog-grid">
-            <a class="vs-photog-card"
-               href="/photographer/sulyap-films/about"
-               style="animation-delay:2s"
-               aria-label="View Sulyap Films">
-                <span class="vs-photog-ring">
-                    <img src="~/Uploads/Logos/SulyapFilms/SulyapFilms.png" alt="Sulyap Films logo" />
-                </span>
-                <span class="vs-photog-name">Sulyap Films</span>
-            </a>
-
-            <a class="vs-photog-card"
-               href="/photographer/ginger-snaps/about"
-               style="animation-delay:2.5s"
-               aria-label="View Ginger Snaps Photography">
-                <span class="vs-photog-ring">
-                    <img src="~/Uploads/Logos/GingerSnaps/GingerSnaps.png" alt="Ginger Snaps Photography logo" />
-                </span>
-                <span class="vs-photog-name">Ginger Snaps Photography</span>
-            </a>
-
-            <a class="vs-photog-card"
-               href="/photographer/chiyos-folder/about"
-               style="animation-delay:3s"
-               aria-label="View Chiyos Folder">
-                <span class="vs-photog-ring">
-                    <img src="~/Uploads/Logos/ChiyosFolder/ChiyosFolder.png" alt="Chiyos Folder logo" />
-                </span>
-                <span class="vs-photog-name">Chiyos Folder</span>
-            </a>
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                var c = Model[i];
+                <a class="vs-photog-card"
+                   href="/photographer/@c.Slug/about"
+                   style="animation-delay:@((2 + i * 0.5).ToString(System.Globalization.CultureInfo.InvariantCulture))s"
+                   aria-label="View @c.Name">
+                    <span class="vs-photog-ring">
+                        <img src="@c.LogoPath" alt="@c.Name logo" />
+                    </span>
+                    <span class="vs-photog-name">@c.Name</span>
+                    <span class="vs-photog-meta">
+                        @(c.PhotoCount > 0 ? $"{c.PhotoCount} photos" : "Portfolio soon")
+                        @if (c.StartingPrice != null) { <text> · from @Ui.Peso(c.StartingPrice.Value).Replace(".00", "")</text> }
+                    </span>
+                </a>
+            }
         </div>
+
+        <a class="vs-track-cta" href="/booking/track">Already booked? <b>Track your booking &rarr;</b></a>
     </div>
 </div>
 
