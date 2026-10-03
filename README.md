@@ -1,7 +1,11 @@
 # VibeShoot
 
-Photographer scheduling & booking with GCash QR payments, transaction monitoring and printable receipts.
+Public booking site: photographer scheduling with GCash QR payments and printable receipts.
 ASP.NET Core MVC (.NET 10) + MySQL (Entity Framework Core / Pomelo).
+
+The admin console lives in a separate project, **[VibeShootAdmin](https://github.com/Oshinobi-obi/VibeShootAdmin)**.
+Both apps use the same `VibeShootStudio` database and the same `VibeShoot/wwwroot/Uploads` folder.
+This project owns the database schema (it runs the migrations), so start it at least once before the admin console.
 
 ## Getting started
 
@@ -14,9 +18,9 @@ ASP.NET Core MVC (.NET 10) + MySQL (Entity Framework Core / Pomelo).
    On first start the app automatically:
    - creates the database and all tables (EF Core migrations),
    - adds the three photographers and their packages,
-   - imports every photo in `wwwroot/Uploads/Album/<Photographer>/<Category>/` into the `GalleryImages` table,
-   - creates the admin account **admin / Admin123!** (change it under *Settings → Change your password*).
-3. Open http://localhost:5041 — the admin console is at `/Admin/Login`.
+   - imports every photo in `wwwroot/Uploads/Album/<Photographer>/<Category>/` into the `GalleryImages` table.
+3. Open http://localhost:5041. For the admin console, run VibeShootAdmin (http://localhost:5018).
+   The faint π link in the corner points to `AdminSiteUrl` in `appsettings.json`.
 
 ## Features
 
@@ -26,15 +30,6 @@ ASP.NET Core MVC (.NET 10) + MySQL (Entity Framework Core / Pomelo).
 - Instant booking statement / receipt — print or download as PDF
 - *Track booking* with Transaction ID + mobile number, and pay the remaining balance via GCash
 
-**Admin console**
-- **Overview** – collections this month, payments awaiting verification, pending requests, monthly chart
-- **Schedule** – month calendar of all sessions; block/unblock days off
-- **Bookings** – filter/search, confirm, decline, complete, cancel; record cash payments
-- **Transactions** – view GCash proofs, verify or reject payments, export CSV
-- **Receipts** – reprint official receipts, print collection reports by date range
-- **Gallery** – upload/delete/feature portfolio photos per album
-- **Settings** – studio profile, GCash QR upload, packages & prices, admin accounts (Super Admin vs. per-photographer)
-
 ## Business rules
 - Max 2 bookings per photographer per day, with a 2-hour preparation interval between sessions
 - Sessions run within 8:00 AM – 8:00 PM and must be booked at least 1 day ahead
@@ -43,12 +38,13 @@ ASP.NET Core MVC (.NET 10) + MySQL (Entity Framework Core / Pomelo).
 - Packages priced at ₱0 are "custom quote" requests (no online payment)
 
 ## Adding photos
-Either upload them in **Admin → Gallery**, or copy files into
-`wwwroot/Uploads/Album/<MediaFolder>/<Birthday|Baptism|Wedding|Highlights>/` and click **Sync from Uploads folder**
-(or just restart the app).
+Either upload them in **VibeShootAdmin → Gallery**, or copy files into
+`wwwroot/Uploads/Album/<MediaFolder>/<Birthday|Baptism|Wedding|Highlights>/` and restart this app
+(or click **Sync from Uploads folder** in the admin Gallery).
 
 ## Schema changes
 ```
 dotnet ef migrations add <Name> --project VibeShoot
 ```
-Migrations are applied automatically on start-up.
+Migrations are applied automatically on start-up. The entity classes are copied in VibeShootAdmin
+(`Models/Entities`, `Data/ApplicationDbContext.cs`), so apply the same change there.

@@ -48,8 +48,5 @@ namespace VibeShoot.Models
     public class ReceiptViewModel
     {
         public Booking Booking { get; set; } = new Booking();
-        public bool IsAdminView { get; set; }
-        /// <summary>When set, the receipt focuses on this single payment (official receipt).</summary>
-        public Payment? Payment { get; set; }
     }
 }

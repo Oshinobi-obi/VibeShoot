@@ -12,14 +12,6 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-builder.Services.AddAuthentication("VibeShootAdminCookie")
-    .AddCookie("VibeShootAdminCookie", options =>
-    {
-        options.LoginPath = "/Admin/Login";
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
-        options.AccessDeniedPath = "/Admin/Login";
-    });
-
 var app = builder.Build();
 
 // Create the database (if needed), apply migrations and import existing images/photographers.
@@ -37,10 +29,8 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles(); // serves files uploaded at runtime (receipts, new gallery photos)
+app.UseStaticFiles();
 app.UseRouting();
-app.UseAuthentication();
-app.UseAuthorization();
 app.MapStaticAssets();
 
 app.MapControllerRoute(

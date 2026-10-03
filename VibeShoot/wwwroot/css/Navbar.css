@@ -1,4 +1,4 @@
-﻿.vs-navbar {
+.vs-navbar {
     position: fixed;
     top: 0;
     left: 0;
@@ -92,6 +92,7 @@
     background: #000;
     clip-path: circle(0% at 50% 50%);
     pointer-events: none;
+    will-change: clip-path;
 }
 
     .vs-nav-iris.closing {

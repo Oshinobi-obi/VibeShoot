@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -14,7 +13,7 @@ namespace VibeShoot.Data
 {
     /// <summary>
     /// Creates/updates the schema and fills a fresh database with the studio's photographers,
-    /// packages, an admin account and every portfolio image already sitting in wwwroot/Uploads.
+    /// packages and every portfolio image already sitting in wwwroot/Uploads.
     /// Safe to run on every start: it only inserts what is missing.
     /// </summary>
     public static class DbSeeder
@@ -28,7 +27,6 @@ namespace VibeShoot.Data
             await SeedPhotographersAsync(db, env);
             await SeedPackagesAsync(db);
             var imported = await ImportGalleryFromDiskAsync(db, env);
-            await SeedAdminAsync(db);
 
             if (imported > 0)
             {
@@ -179,16 +177,6 @@ namespace VibeShoot.Data
 
             await db.SaveChangesAsync();
             return added;
-        }
-
-        private static async Task SeedAdminAsync(ApplicationDbContext db)
-        {
-            if (await db.Admins.AnyAsync()) return;
-
-            var admin = new Admin { Username = "admin", Role = AdminRoles.SuperAdmin };
-            admin.PasswordHash = new PasswordHasher<Admin>().HashPassword(admin, "Admin123!");
-            db.Admins.Add(admin);
-            await db.SaveChangesAsync();
         }
 
         private static string? FirstExistingFile(IWebHostEnvironment env, string relativeDir)

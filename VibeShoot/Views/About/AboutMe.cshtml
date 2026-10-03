@@ -1,10 +1,12 @@
-﻿@model VibeShoot.Models.PhotographerProfile
+@model VibeShoot.Models.PhotographerProfile
 @{
     ViewData["Title"] = Model.Name;
     Layout = "_Layout";
 }
 
-<link rel="stylesheet" href="~/css/About.css" asp-append-version="true" />
+@section Styles {
+    <link rel="stylesheet" href="~/css/About.css" asp-append-version="true" />
+}
 
 <div class="vs-iris-in" aria-hidden="true"></div>
 
@@ -31,8 +33,8 @@
                 <p class="vs-about-bio">@Model.Bio</p>
 
                 <div class="vs-about-cta">
-                    <a class="vs-cta-primary" href="/photographer/@Model.Slug/schedule">Book a session</a>
-                    <a class="vs-cta-ghost" href="/photographer/@Model.Slug/album">View album</a>
+                    <a class="vs-cta-primary" data-iris href="/photographer/@Model.Slug/schedule">Book a session</a>
+                    <a class="vs-cta-ghost" data-iris href="/photographer/@Model.Slug/album">View album</a>
                 </div>
 
                 <div class="vs-social-block">

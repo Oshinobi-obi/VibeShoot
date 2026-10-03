@@ -1,14 +1,13 @@
-﻿@using System.Linq
+@using System.Linq
 @model VibeShoot.Models.AlbumViewModel
 @{
     ViewData["Title"] = Model.Name;
     Layout = "_Layout";
 }
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="~/css/Album.css" asp-append-version="true" />
+@section Styles {
+    <link rel="stylesheet" href="~/css/Album.css" asp-append-version="true" />
+}
 
 <div class="vs-iris-in" aria-hidden="true"></div>
 

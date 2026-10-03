@@ -1,9 +1,11 @@
-﻿@{
+@{
     ViewData["Title"] = "Welcome";
     Layout = "_Layout";
 }
 
-<link rel="stylesheet" href="~/css/Index.css" asp-append-version="true" />
+@section Styles {
+    <link rel="stylesheet" href="~/css/Index.css" asp-append-version="true" />
+}
 
 <div class="vs-hero">
     <div class="vs-bg-layer">

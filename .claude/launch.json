@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vibeshoot",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "VibeShoot/VibeShoot.csproj", "--launch-profile", "http"],
+      "port": 5041
+    },
+    {
+      "name": "vibeshoot-admin",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "../VibeShootAdmin/VibeShootAdmin/VibeShootAdmin.csproj", "--launch-profile", "http"],
+      "port": 5018
+    }
+  ]
+}

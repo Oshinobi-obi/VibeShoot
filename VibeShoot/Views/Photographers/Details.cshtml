@@ -1,13 +1,12 @@
-﻿@model List<VibeShoot.Models.PhotographerCard>
+@model List<VibeShoot.Models.PhotographerCard>
 @{
     ViewData["Title"] = "Choose Your Photographer";
     Layout = "_Layout";
 }
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="~/css/Details.css" asp-append-version="true" />
+@section Styles {
+    <link rel="stylesheet" href="~/css/Details.css" asp-append-version="true" />
+}
 
 <div class="vs-iris-in" aria-hidden="true"></div>
 
