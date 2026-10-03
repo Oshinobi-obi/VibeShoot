@@ -140,14 +140,14 @@
 
     @if (canPayBalance)
     {
-        <form class="rc-pay" method="post" action="/booking/@b.TransactionId/pay?t=@token" enctype="multipart/form-data">
+        <form autocomplete="off" class="rc-pay" method="post" action="/booking/@b.TransactionId/pay?t=@token" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
             <div class="qr"><img src="@b.Photographer!.GCashQrPath" alt="GCash QR code" /></div>
             <div>
                 <h3>Pay your balance via GCash</h3>
                 <p>Scan the QR, send <b style="color:#e3bf4a">@Ui.Peso(dueNow)</b>@(string.IsNullOrEmpty(b.Photographer.GCashAccountName) ? "" : $" to {b.Photographer.GCashAccountName}"), then upload your receipt below.</p>
                 <label for="refNo">GCash reference no.</label>
-                <input id="refNo" name="referenceNumber" inputmode="numeric" required placeholder="13-digit reference number" />
+                <input autocomplete="off" id="refNo" name="referenceNumber" inputmode="numeric" required placeholder="13-digit reference number" />
                 <label for="proof">GCash receipt screenshot</label>
                 <input id="proof" type="file" name="receiptImage" accept="image/*" required data-shrink />
                 <button class="rc-btn gold" type="submit">Submit payment</button>

@@ -1,4 +1,4 @@
-﻿:root {
+:root {
     --bg-0: #0a0a0c;
     --bg-1: #161619;
     --bokeh-gold: 201,162,39;
@@ -250,7 +250,7 @@
 .vs-stepper .done i::after, .vs-stepper .cur i::after { transform: scaleX(1); }
 .vs-stepper span { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); display: block; margin-top: 6px; }
 .vs-stepper .cur span { color: var(--gold-2); }
-.vs-wz-body { padding: 18px 26px; overflow-y: auto; flex: 1; min-height: 0; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
+.vs-wz-body { padding: 18px 26px; overflow-y: auto; flex: 1; min-height: 0; }
 .vs-step { display: none; animation: vs-slide .35s ease; }
 .vs-step.active { display: block; }
 @keyframes vs-slide { from { opacity: 0; transform: translateX(14px); } }

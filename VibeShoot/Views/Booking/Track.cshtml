@@ -33,7 +33,7 @@
             <div class="vs-alert" role="alert">@Model.Error</div>
         }
 
-        <form class="vs-panel-card" method="post" action="/booking/track">
+        <form autocomplete="off" class="vs-panel-card" method="post" action="/booking/track">
             @Html.AntiForgeryToken()
             <div class="vs-field">
                 <label class="vs-label" for="tx">Transaction ID</label>
@@ -42,7 +42,7 @@
             </div>
             <div class="vs-field">
                 <label class="vs-label" for="mobile">Mobile number used when booking</label>
-                <input id="mobile" name="ContactNumber" value="@Model.ContactNumber" type="tel" inputmode="numeric" placeholder="0917-123-4567" required />
+                <input autocomplete="off" id="mobile" name="ContactNumber" value="@Model.ContactNumber" type="tel" inputmode="numeric" placeholder="0917-123-4567" required />
             </div>
             <button class="vs-btn vs-btn-gold" type="submit" style="width:100%;">Find my booking</button>
             <p style="text-align:center;margin:16px 0 0;font-size:.82rem;"><a href="/photographers" style="color:var(--text-2);">&larr; Back to photographers</a></p>

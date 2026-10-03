@@ -93,7 +93,7 @@
 
 <!-- Booking wizard -->
 <div class="vs-modal" id="wizard" role="dialog" aria-modal="true" aria-labelledby="wzTitle">
-    <form class="vs-wizard" id="bookingForm" enctype="multipart/form-data" novalidate>
+    <form autocomplete="off" class="vs-wizard" id="bookingForm" enctype="multipart/form-data" novalidate>
         @Html.AntiForgeryToken()
         <input type="hidden" name="Date" id="fDate" />
         <input type="hidden" name="StartTime" id="fStart" />
@@ -125,14 +125,14 @@
 
                 <!-- Step 2: client details -->
                 <section class="vs-step" data-step="1">
-                    <div class="vs-field"><label class="vs-label" for="fName">Full name *</label><input id="fName" name="FullName" autocomplete="name" placeholder="Juan Dela Cruz" required maxlength="128" /></div>
+                    <div class="vs-field"><label class="vs-label" for="fName">Full name *</label><input id="fName" name="FullName" autocomplete="off" placeholder="Juan Dela Cruz" required maxlength="128" /></div>
                     <div class="vs-row">
-                        <div class="vs-field"><label class="vs-label" for="fMobile">Mobile number *</label><input id="fMobile" name="ContactNumber" type="tel" inputmode="numeric" autocomplete="tel" placeholder="0917-123-4567" maxlength="13" required /><span class="help">Used to track your booking.</span></div>
-                        <div class="vs-field"><label class="vs-label" for="fEmail">Email</label><input id="fEmail" name="Email" type="email" autocomplete="email" placeholder="you@example.com" maxlength="128" /></div>
+                        <div class="vs-field"><label class="vs-label" for="fMobile">Mobile number *</label><input id="fMobile" name="ContactNumber" type="tel" inputmode="numeric" autocomplete="off" placeholder="0917-123-4567" maxlength="13" required /><span class="help">Used to track your booking.</span></div>
+                        <div class="vs-field"><label class="vs-label" for="fEmail">Email</label><input id="fEmail" name="Email" type="email" autocomplete="off" placeholder="you@example.com" maxlength="128" /></div>
                     </div>
-                    <div class="vs-field"><label class="vs-label" for="fSocial">Facebook / Messenger link</label><input id="fSocial" name="SocialLink" placeholder="facebook.com/yourprofile" maxlength="512" /></div>
-                    <div class="vs-field"><label class="vs-label" for="fVenue">Venue / location *</label><input id="fVenue" name="Venue" placeholder="e.g. Fernwood Gardens, Quezon City" required maxlength="256" /></div>
-                    <div class="vs-field"><label class="vs-label" for="fNotes">Notes for the photographer</label><textarea id="fNotes" name="Notes" placeholder="Theme, number of guests, special requests…" maxlength="1000"></textarea></div>
+                    <div class="vs-field"><label class="vs-label" for="fSocial">Facebook / Messenger link</label><input autocomplete="off" id="fSocial" name="SocialLink" placeholder="facebook.com/yourprofile" maxlength="512" /></div>
+                    <div class="vs-field"><label class="vs-label" for="fVenue">Venue / location *</label><input autocomplete="off" id="fVenue" name="Venue" placeholder="e.g. Fernwood Gardens, Quezon City" required maxlength="256" /></div>
+                    <div class="vs-field"><label class="vs-label" for="fNotes">Notes for the photographer</label><textarea autocomplete="off" id="fNotes" name="Notes" placeholder="Theme, number of guests, special requests…" maxlength="1000"></textarea></div>
                     <label class="vs-check"><input type="checkbox" id="fTerms" name="AcceptedTerms" value="true" /> <span>I have read and agree to the <a href="#" id="openTerms">Terms &amp; Conditions</a>, including the non-refundable 50% down payment.</span></label>
                 </section>
 
@@ -164,7 +164,7 @@
                                     <li>Send exactly the amount shown above.</li>
                                     <li>Enter the 13-digit reference number and upload a screenshot of the GCash receipt.</li>
                                 </ol>
-                                <div class="vs-field"><label class="vs-label" for="fRef">GCash reference no. *</label><input id="fRef" name="ReferenceNumber" inputmode="numeric" placeholder="e.g. 1234 567 890123" maxlength="24" /></div>
+                                <div class="vs-field"><label class="vs-label" for="fRef">GCash reference no. *</label><input autocomplete="off" id="fRef" name="ReferenceNumber" inputmode="numeric" placeholder="e.g. 1234 567 890123" maxlength="24" /></div>
                                 <label class="vs-drop" id="dropZone">
                                     <input type="file" id="fReceipt" name="ReceiptImage" accept="image/*" />
                                     <span id="dropContent"><b>Upload GCash receipt *</b>Tap to choose a screenshot, or drop it here</span>

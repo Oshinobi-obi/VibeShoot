@@ -29,7 +29,7 @@ namespace VibeShoot.Controllers
             var images = await _context.GalleryImages
                 .Where(g => g.PhotographerId == entity.Id)
                 .OrderBy(g => g.SortOrder).ThenBy(g => g.Id)
-                .Select(g => new { g.Category, g.FilePath })
+                .Select(g => new { g.Category, g.FilePath, g.IsFeatured })
                 .ToListAsync();
 
             var model = new AlbumViewModel
@@ -37,6 +37,11 @@ namespace VibeShoot.Controllers
                 Slug = entity.Slug,
                 Name = entity.Name,
                 LogoPath = entity.LogoPath,
+                Tagline = entity.Tagline,
+                TotalCount = images.Count,
+                CoverImage = images.Where(i => i.IsFeatured).Select(i => i.FilePath).FirstOrDefault()
+                             ?? images.Where(i => i.Category == "Highlights").Select(i => i.FilePath).FirstOrDefault()
+                             ?? images.Select(i => i.FilePath).FirstOrDefault(),
                 Categories = GalleryImage.Categories.Select(cat => new GalleryCategory
                 {
                     Name = cat,
