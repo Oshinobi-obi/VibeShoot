@@ -129,3 +129,9 @@ html, body, * {
         width: 0;
         height: 0;
     }
+
+.rc-flash.notify { display: flex; align-items: center; justify-content: space-between; gap: 14px; background: rgba(201,162,39,0.1); border: 1px solid rgba(201,162,39,0.35); color: rgba(245,245,242,0.8); }
+.rc-flash.notify[hidden] { display: none; }
+.rc-flash.notify b { color: #fff; }
+.rc-flash.notify .rc-btn { flex: none; padding: 8px 14px; }
+@media (max-width: 640px) { .rc-flash.notify { flex-direction: column; align-items: stretch; text-align: center; } }

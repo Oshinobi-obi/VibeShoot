@@ -388,3 +388,10 @@
     .vs-book { animation: none; opacity: 1; transform: none; }
     .vs-step, .vs-wizard, .vs-done-ring, .vs-done-ring svg { animation: none; stroke-dashoffset: 0; }
 }
+
+/* "Notify me" card on the done step */
+.vs-notify { display: flex; align-items: center; gap: 14px; justify-content: space-between; text-align: left; max-width: 480px; margin: 0 auto 20px; padding: 14px 16px; border-radius: 14px; border: 1px solid rgba(201,162,39,0.35); background: rgba(201,162,39,0.08); font-size: 0.85rem; color: var(--text-2); }
+.vs-notify b { color: var(--white); }
+.vs-notify[hidden] { display: none; }
+.vs-notify .vs-btn { padding: 10px 16px; flex: none; }
+@media (max-width: 600px) { .vs-notify { flex-direction: column; align-items: stretch; text-align: center; } }

@@ -290,6 +290,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 state.submitted = true;
                 $('doneTx').textContent = res.transactionId;
+
+                // Sound + remember the booking so this browser can announce the confirmation later.
+                if (window.vsSound) window.vsSound(isQuote() ? 'quote-sent' : 'booking-sent');
+                var token = decodeURIComponent((res.receiptUrl.split('t=')[1] || '').split('&')[0]);
+                if (window.vsRememberBooking) window.vsRememberBooking(res.transactionId, token, 'Pending');
+                var canAsk = window.vsNotifySupported && window.vsNotifySupported() && Notification.permission === 'default';
+                $('notifyCard').hidden = !canAsk;
+                if (window.vsNotifySupported && window.vsNotifySupported() && Notification.permission === 'granted') window.vsAskNotifications();
                 $('receiptLink').href = res.receiptUrl;
                 $('doneText').textContent = isQuote()
                     ? 'Your request is in! The photographer will reach out with a quotation for your custom package.'
@@ -338,6 +346,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     $('copyAmount').addEventListener('click', function () { copy(state.pkg ? (state.pkg.price / 2).toFixed(2) : '', this); });
     $('copyTx').addEventListener('click', function () { copy($('doneTx').textContent, this); });
+    $('btnNotify').addEventListener('click', function () {
+        var btn = this;
+        window.vsAskNotifications().then(function (ok) {
+            $('notifyCard').innerHTML = ok
+                ? '<span><b>Notifications are on.</b> Keep VibeShoot open in a tab and we will let you know.</span>'
+                : '<span>Notifications are blocked in your browser. You can still check your status anytime on Track Booking.</span>';
+        });
+    });
 
     // ------------------------------------------------------------ Terms
     var terms = $('termsModal');

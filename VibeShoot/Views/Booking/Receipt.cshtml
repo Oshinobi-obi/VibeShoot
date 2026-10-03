@@ -8,6 +8,8 @@
     var dueNow = b.Balance - b.AmountForVerification;
     var canPayBalance = b.Status == BookingStatus.Confirmed && b.TotalPrice > 0 && dueNow > 0 && !string.IsNullOrEmpty(b.Photographer?.GCashQrPath);
     var token = Context.Request.Query["t"].ToString();
+    var paySuccess = TempData["PaySuccess"] as string;
+    var waiting = b.Status == BookingStatus.Pending;
     var fileName = $"VibeShoot-{docNo}.pdf";
 }
 <!DOCTYPE html>
@@ -36,7 +38,14 @@
         </div>
     </div>
 
-    @if (TempData["PaySuccess"] != null) { <div class="rc-flash ok">@TempData["PaySuccess"]</div> }
+    @if (paySuccess != null) { <div class="rc-flash ok">@paySuccess</div> }
+    @if (waiting)
+    {
+        <div class="rc-flash notify" id="rcNotify" hidden>
+            <span><b>Want a heads-up?</b> We'll notify you here when your session is confirmed.</span>
+            <button type="button" class="rc-btn gold" id="rcNotifyBtn">Notify me</button>
+        </div>
+    }
     @if (TempData["PayError"] != null) { <div class="rc-flash err">@TempData["PayError"]</div> }
 
     <article class="paper" id="receiptPaper">
@@ -155,7 +164,33 @@
         </form>
     }
 
+    <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/shrinkImage.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            var id = '@b.TransactionId', token = '@token', status = '@b.Status';
+            if (!window.vsRememberBooking || !token) return;
+            vsRememberBooking(id, token, status);
+            vsBookingStatusSeen(id, status);             // plays "confirmed" the first time a confirmed booking is opened
+            @if (paySuccess != null)
+            {
+                <text>vsSound('balance-sent');</text>
+            }
+
+            var card = document.getElementById('rcNotify');
+            if (!card || !vsNotifySupported()) return;
+            if (Notification.permission === 'granted') { vsAskNotifications(); return; }
+            if (Notification.permission !== 'default') return;
+            card.hidden = false;
+            document.getElementById('rcNotifyBtn').addEventListener('click', function () {
+                vsAskNotifications().then(function (ok) {
+                    card.innerHTML = ok
+                        ? '<span><b>Notifications are on.</b> Keep this page open and we will let you know.</span>'
+                        : '<span>Notifications are blocked in your browser. Refresh this page anytime to see your status.</span>';
+                });
+            });
+        })();
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         document.getElementById('btnPdf').addEventListener('click', function () {

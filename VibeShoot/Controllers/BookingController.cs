@@ -52,6 +52,23 @@ namespace VibeShoot.Controllers
             return View("~/Views/Booking/Receipt.cshtml", new ReceiptViewModel { Booking = booking });
         }
 
+        /// <summary>Booking status for the client's browser to watch (notifications when it gets confirmed).</summary>
+        [HttpGet("booking/{id}/status")]
+        public async Task<IActionResult> Status(string id, string t)
+        {
+            var booking = await LoadAsync(id, t);
+            if (booking == null) return NotFound();
+
+            Response.Headers.CacheControl = "no-store";
+            return Json(new
+            {
+                status = booking.Status,
+                photographer = booking.Photographer?.Name,
+                date = booking.TargetDate.ToString("dddd, MMMM d"),
+                time = booking.TimeRange,
+            });
+        }
+
         /// <summary>Lets a client send the remaining balance through GCash from their receipt page.</summary>
         [HttpPost("booking/{id}/pay")]
         [ValidateAntiForgeryToken]
