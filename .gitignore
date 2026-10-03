@@ -363,3 +363,6 @@ MigrationBackup/
 FodyWeavers.xsd
 # Client GCash payment screenshots (private, uploaded at runtime)
 VibeShoot/wwwroot/Uploads/Receipts/
+
+# Production settings (contain the hosting database password)
+VibeShoot/appsettings.Production.json

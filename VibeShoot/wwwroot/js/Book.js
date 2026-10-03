@@ -267,10 +267,18 @@ document.addEventListener('DOMContentLoaded', function () {
         data.set('AcceptedTerms', $('fTerms').checked ? 'true' : 'false');
         if (isQuote()) { data.delete('ReceiptImage'); data.delete('ReferenceNumber'); }
 
-        fetch('/photographer/' + encodeURIComponent(cfg.slug) + '/api/book', {
-            method: 'POST',
-            body: data,
-            headers: { 'RequestVerificationToken': form.querySelector('input[name="__RequestVerificationToken"]').value }
+        // Shrink the GCash screenshot first so the upload (and the database) stays small.
+        var receipt = !isQuote() && $('fReceipt').files[0];
+        var ready = receipt && window.vsShrinkImage
+            ? window.vsShrinkImage(receipt).then(function (f) { data.set('ReceiptImage', f, f.name); })
+            : Promise.resolve();
+
+        ready.then(function () {
+            return fetch('/photographer/' + encodeURIComponent(cfg.slug) + '/api/book', {
+                method: 'POST',
+                body: data,
+                headers: { 'RequestVerificationToken': form.querySelector('input[name="__RequestVerificationToken"]').value }
+            });
         })
             .then(function (r) { return r.json().catch(function () { return { ok: false, error: 'Something went wrong. Please try again.' }; }); })
             .then(function (res) {

@@ -17,6 +17,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex" />
     <title>Booking @docNo · VibeShoot</title>
+    <link rel="icon" type="image/svg+xml" href="~/favicon.svg" asp-append-version="true" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -148,12 +149,13 @@
                 <label for="refNo">GCash reference no.</label>
                 <input id="refNo" name="referenceNumber" inputmode="numeric" required placeholder="13-digit reference number" />
                 <label for="proof">GCash receipt screenshot</label>
-                <input id="proof" type="file" name="receiptImage" accept="image/*" required />
+                <input id="proof" type="file" name="receiptImage" accept="image/*" required data-shrink />
                 <button class="rc-btn gold" type="submit">Submit payment</button>
             </div>
         </form>
     }
 
+    <script src="~/js/shrinkImage.js" asp-append-version="true"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         document.getElementById('btnPdf').addEventListener('click', function () {

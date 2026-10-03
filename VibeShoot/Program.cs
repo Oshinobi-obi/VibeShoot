@@ -6,7 +6,7 @@ using VibeShoot.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddScoped<ImageStorage>();
+builder.Services.AddScoped<MediaStore>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -22,13 +22,16 @@ using (var scope = app.Services.CreateScope())
     await DbSeeder.SeedAsync(db, app.Environment, logger);
 }
 
+// HTTPS is off until the sites have SSL certificates. Set "Https:Enabled": true in appsettings to turn it back on.
+var httpsEnabled = app.Configuration.GetValue<bool>("Https:Enabled");
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+    if (httpsEnabled) app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+if (httpsEnabled) app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.MapStaticAssets();

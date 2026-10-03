@@ -8,12 +8,14 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VibeShoot.Models.Entities;
+using VibeShoot.Services;
 
 namespace VibeShoot.Data
 {
     /// <summary>
     /// Creates/updates the schema and fills a fresh database with the studio's photographers,
-    /// packages and every portfolio image already sitting in wwwroot/Uploads.
+    /// packages and every portfolio image shipped in wwwroot/Uploads. Images are copied into the
+    /// MediaFiles table, so the public site and the admin console (separate hosts) both see them.
     /// Safe to run on every start: it only inserts what is missing.
     /// </summary>
     public static class DbSeeder
@@ -26,11 +28,12 @@ namespace VibeShoot.Data
 
             await SeedPhotographersAsync(db, env);
             await SeedPackagesAsync(db);
+            var converted = await MoveFilePathsIntoDatabaseAsync(db, env);
             var imported = await ImportGalleryFromDiskAsync(db, env);
 
-            if (imported > 0)
+            if (converted + imported > 0)
             {
-                logger.LogInformation("Imported {Count} gallery images from wwwroot/Uploads/Album into the database.", imported);
+                logger.LogInformation("Copied {Count} images from wwwroot/Uploads into the database.", converted + imported);
             }
         }
 
@@ -134,10 +137,42 @@ namespace VibeShoot.Data
             await db.SaveChangesAsync();
         }
 
-        /// <summary>Registers every image under wwwroot/Uploads/Album/{MediaFolder}/{Category} that is not in the database yet.</summary>
+        /// <summary>
+        /// Copies any image still referenced as a /Uploads/... file (logos, QR codes, gallery photos,
+        /// payment screenshots) into MediaFiles and points the record at its /media/{id} URL.
+        /// </summary>
+        private static async Task<int> MoveFilePathsIntoDatabaseAsync(ApplicationDbContext db, IWebHostEnvironment env)
+        {
+            int moved = 0;
+
+            foreach (var p in await db.Photographers.ToListAsync())
+            {
+                var logo = await ToMediaUrlAsync(db, env, p.LogoPath, MediaKind.Logo);
+                if (logo != null) { p.LogoPath = logo; moved++; }
+                var qr = await ToMediaUrlAsync(db, env, p.GCashQrPath, MediaKind.QrCode);
+                if (qr != null) { p.GCashQrPath = qr; moved++; }
+            }
+            await db.SaveChangesAsync();
+
+            foreach (var g in await db.GalleryImages.Where(g => g.FilePath.StartsWith("/Uploads/")).ToListAsync())
+            {
+                var url = await ToMediaUrlAsync(db, env, g.FilePath, MediaKind.Gallery);
+                if (url != null) { g.FilePath = url; moved++; await db.SaveChangesAsync(); }
+            }
+
+            foreach (var pay in await db.Payments.Where(x => x.ProofImagePath != null && x.ProofImagePath.StartsWith("/Uploads/")).ToListAsync())
+            {
+                var url = await ToMediaUrlAsync(db, env, pay.ProofImagePath, MediaKind.Receipt);
+                if (url != null) { pay.ProofImagePath = url; moved++; await db.SaveChangesAsync(); }
+            }
+
+            return moved;
+        }
+
+        /// <summary>Adds photos found under wwwroot/Uploads/Album/{MediaFolder}/{Category} that aren't in the database yet.</summary>
         public static async Task<int> ImportGalleryFromDiskAsync(ApplicationDbContext db, IWebHostEnvironment env)
         {
-            var known = (await db.GalleryImages.Select(g => g.FilePath).ToListAsync())
+            var known = (await db.MediaFiles.Where(m => m.SourcePath != null).Select(m => m.SourcePath!).ToListAsync())
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
             var photographers = await db.Photographers.ToListAsync();
             int added = 0;
@@ -157,8 +192,11 @@ namespace VibeShoot.Data
                     int order = await db.GalleryImages.CountAsync(g => g.PhotographerId == p.Id && g.Category == category);
                     foreach (var file in files)
                     {
-                        var url = $"/Uploads/Album/{p.MediaFolder}/{category}/{Path.GetFileName(file)}";
-                        if (known.Contains(url)) continue;
+                        var source = $"/Uploads/Album/{p.MediaFolder}/{category}/{Path.GetFileName(file)}";
+                        if (known.Contains(source)) continue;
+
+                        var url = await ToMediaUrlAsync(db, env, source, MediaKind.Gallery);
+                        if (url == null) continue;
 
                         db.GalleryImages.Add(new GalleryImage
                         {
@@ -169,14 +207,47 @@ namespace VibeShoot.Data
                             SortOrder = ++order,
                             IsFeatured = category == "Highlights" && order <= 3,
                         });
-                        known.Add(url);
+                        // One image per save keeps each statement well under MySQL's max_allowed_packet.
+                        await db.SaveChangesAsync();
+                        known.Add(source);
                         added++;
                     }
                 }
             }
 
-            await db.SaveChangesAsync();
             return added;
+        }
+
+        /// <summary>
+        /// Returns the /media/{id} URL for a /Uploads/... file, copying it into MediaFiles if needed.
+        /// Returns null when the path isn't a local upload or the file is missing.
+        /// </summary>
+        private static async Task<string?> ToMediaUrlAsync(ApplicationDbContext db, IWebHostEnvironment env, string? path, string kind)
+        {
+            if (string.IsNullOrEmpty(path) || !path.StartsWith("/Uploads/", StringComparison.OrdinalIgnoreCase)) return null;
+
+            var existing = await db.MediaFiles.Where(m => m.SourcePath == path).Select(m => (Guid?)m.Id).FirstOrDefaultAsync();
+            if (existing != null) return MediaFile.MediaUrl(existing.Value);
+
+            var full = Path.Combine(env.WebRootPath, path.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            if (!File.Exists(full)) return null;
+
+            var data = await File.ReadAllBytesAsync(full);
+            var contentType = MediaStore.DetectImageType(data);
+            if (contentType == null) return null;
+
+            var media = new MediaFile
+            {
+                FileName = Path.GetFileName(full),
+                ContentType = contentType,
+                Data = data,
+                SizeBytes = data.LongLength,
+                Kind = kind,
+                SourcePath = path,
+            };
+            db.MediaFiles.Add(media);
+            await db.SaveChangesAsync();
+            return media.Url;
         }
 
         private static string? FirstExistingFile(IWebHostEnvironment env, string relativeDir)

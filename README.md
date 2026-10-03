@@ -4,7 +4,9 @@ Public booking site: photographer scheduling with GCash QR payments and printabl
 ASP.NET Core MVC (.NET 10) + MySQL (Entity Framework Core / Pomelo).
 
 The admin console lives in a separate project, **[VibeShootAdmin](https://github.com/Oshinobi-obi/VibeShootAdmin)**.
-Both apps use the same `VibeShootStudio` database and the same `VibeShoot/wwwroot/Uploads` folder.
+Both apps use the same `VibeShootStudio` database. Every image (gallery photos, logos, GCash QR codes, payment
+screenshots) is stored in the database's `MediaFiles` table and served at `/media/{id}`, so the two apps can be
+hosted separately.
 This project owns the database schema (it runs the migrations), so start it at least once before the admin console.
 
 ## Getting started
@@ -18,9 +20,27 @@ This project owns the database schema (it runs the migrations), so start it at l
    On first start the app automatically:
    - creates the database and all tables (EF Core migrations),
    - adds the three photographers and their packages,
-   - imports every photo in `wwwroot/Uploads/Album/<Photographer>/<Category>/` into the `GalleryImages` table.
+   - copies every photo in `wwwroot/Uploads/Album/<Photographer>/<Category>/` (plus the logos and QR codes) into the
+     database. This happens once; it may take a little while on the first start.
 3. Open http://localhost:5041. For the admin console, run VibeShootAdmin (http://localhost:5018).
    The faint π link in the corner points to `AdminSiteUrl` in `appsettings.json`.
+
+### Setting up the database by hand (optional)
+`Database/VibeShootStudio.sql` creates all the tables and the starting data
+(photographers, packages, gallery photos and the `admin` / `Admin123!` account). The file doesn't create a database;
+it fills whichever empty database you import it into:
+- **phpMyAdmin / shared hosting (e.g. MonsterASP):** select your database in the left panel, then *Import*.
+- **Local MySQL:**
+  ```
+  mysql -u root -p -e "CREATE DATABASE VibeShootStudio CHARACTER SET utf8mb4"
+  mysql -u root -p VibeShootStudio < Database/VibeShootStudio.sql
+  ```
+
+The app recognises the imported schema and won't recreate it. Point `ConnectionStrings:DefaultConnection` in both apps
+at that database (on hosting, use the server, database name, user and password from your hosting panel).
+
+`Database/VibeShootStudio_schema.sql` is the same structure with no data. On first start, VibeShoot fills in the
+photographers, packages and gallery photos, and VibeShootAdmin creates the `admin` account.
 
 ## Features
 
@@ -38,9 +58,9 @@ This project owns the database schema (it runs the migrations), so start it at l
 - Packages priced at ₱0 are "custom quote" requests (no online payment)
 
 ## Adding photos
-Either upload them in **VibeShootAdmin → Gallery**, or copy files into
-`wwwroot/Uploads/Album/<MediaFolder>/<Birthday|Baptism|Wedding|Highlights>/` and restart this app
-(or click **Sync from Uploads folder** in the admin Gallery).
+Upload them in **VibeShootAdmin → Gallery**. Large photos are resized in the browser before upload.
+(Files dropped into `wwwroot/Uploads/Album/<MediaFolder>/<Category>/` are also copied into the database the next
+time this app starts.)
 
 ## Schema changes
 ```

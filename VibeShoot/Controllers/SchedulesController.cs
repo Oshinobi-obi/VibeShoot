@@ -14,12 +14,12 @@ namespace VibeShoot.Controllers
     public class SchedulesController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly ImageStorage _storage;
+        private readonly MediaStore _media;
 
-        public SchedulesController(ApplicationDbContext context, ImageStorage storage)
+        public SchedulesController(ApplicationDbContext context, MediaStore media)
         {
             _context = context;
-            _storage = storage;
+            _media = media;
         }
 
         [HttpGet("photographer/{photographer}/schedule")]
@@ -119,7 +119,7 @@ namespace VibeShoot.Controllers
                 reference = BookingRules.NormalizeReference(form.ReferenceNumber);
                 if (reference == null) return Fail("Please enter the GCash reference number (digits only, as shown on your GCash receipt).");
 
-                var imageError = ImageStorage.Validate(form.ReceiptImage);
+                var imageError = MediaStore.Validate(form.ReceiptImage);
                 if (imageError != null) return Fail("Receipt screenshot: " + imageError);
 
                 if (await _context.Payments.AnyAsync(p => p.ReferenceNumber == reference && p.Status != PaymentStatus.Rejected))
@@ -150,7 +150,8 @@ namespace VibeShoot.Controllers
 
             if (downPayment > 0)
             {
-                var proof = await _storage.SaveAsync(form.ReceiptImage!, "Uploads/Receipts", booking.TransactionId);
+                var proof = await _media.AddAsync(form.ReceiptImage!, MediaKind.Receipt);
+                if (proof == null) return Fail("Receipt screenshot: please upload a JPG, PNG or WEBP image.");
                 booking.Payments.Add(new Payment
                 {
                     ReceiptNumber = IdGenerator.ReceiptNumber(),

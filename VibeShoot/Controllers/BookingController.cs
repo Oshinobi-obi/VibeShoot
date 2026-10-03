@@ -15,12 +15,12 @@ namespace VibeShoot.Controllers
     public class BookingController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly ImageStorage _storage;
+        private readonly MediaStore _media;
 
-        public BookingController(ApplicationDbContext context, ImageStorage storage)
+        public BookingController(ApplicationDbContext context, MediaStore media)
         {
             _context = context;
-            _storage = storage;
+            _media = media;
         }
 
         [HttpGet("booking/track")]
@@ -70,7 +70,10 @@ namespace VibeShoot.Controllers
             else if (reference == null) error = "Please enter a valid GCash reference number.";
             else if (await _context.Payments.AnyAsync(p => p.ReferenceNumber == reference && p.Status != PaymentStatus.Rejected))
                 error = "This GCash reference number has already been used.";
-            else error = ImageStorage.Validate(receiptImage);
+            else error = MediaStore.Validate(receiptImage);
+
+            var proof = error == null ? await _media.AddAsync(receiptImage, MediaKind.Receipt) : null;
+            if (error == null && proof == null) error = "Please upload a JPG, PNG or WEBP image of your GCash receipt.";
 
             if (error != null)
             {
@@ -85,7 +88,7 @@ namespace VibeShoot.Controllers
                 Method = PaymentMethod.GCash,
                 Type = PaymentType.Balance,
                 ReferenceNumber = reference,
-                ProofImagePath = await _storage.SaveAsync(receiptImage, "Uploads/Receipts", booking.TransactionId + "-bal"),
+                ProofImagePath = proof,
                 Status = PaymentStatus.ForVerification,
             });
             booking.UpdatedAt = System.DateTime.UtcNow;
