@@ -1,7 +1,3 @@
-@inject Microsoft.Extensions.Configuration.IConfiguration Config
-@{
-    var adminUrl = Config["AdminSiteUrl"];
-}
 <!DOCTYPE html>
 <html lang="en" style="background:#0a0a0c">
 <head>
@@ -40,11 +36,6 @@
     </script>
 </head>
 <body>
-    @if (!string.IsNullOrWhiteSpace(adminUrl))
-    {
-        <a href="@adminUrl" aria-label="Admin" style="position: fixed; bottom: 10px; right: 10px; color: rgba(255,255,255,0.1); font-size: 10px; text-decoration: none; z-index: 9999;">&pi;</a>
-    }
-
     @RenderBody()
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

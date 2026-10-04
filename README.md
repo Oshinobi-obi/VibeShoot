@@ -23,7 +23,6 @@ This project owns the database schema (it runs the migrations), so start it at l
    - copies every photo in `wwwroot/Uploads/Album/<Photographer>/<Category>/` (plus the logos and QR codes) into the
      database. This happens once; it may take a little while on the first start.
 3. Open http://localhost:5041. For the admin console, run VibeShootAdmin (http://localhost:5018).
-   The faint π link in the corner points to `AdminSiteUrl` in `appsettings.json`.
 
 ### Setting up the database by hand (optional)
 `Database/VibeShootStudio.sql` creates all the tables and the starting data
