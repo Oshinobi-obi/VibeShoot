@@ -24,6 +24,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/css/Receipt.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Modal.css" asp-append-version="true" />
 </head>
 <body class="rc">
     <div class="rc-toolbar">
@@ -38,7 +39,18 @@
         </div>
     </div>
 
-    @if (paySuccess != null) { <div class="rc-flash ok">@paySuccess</div> }
+    @if (paySuccess != null)
+    {
+        <template data-notice data-title="Payment submitted" data-variant="success">@paySuccess</template>
+    }
+    @if (TempData["ReviewThanks"] != null)
+    {
+        <template data-notice data-title="Thank you!" data-variant="success">Your review is now live on @b.Photographer?.Name's page. It really helps other clients choose.</template>
+    }
+    @if (TempData["ReviewError"] != null)
+    {
+        <template data-notice data-title="Review not posted" data-variant="error">@TempData["ReviewError"]</template>
+    }
     @if (waiting)
     {
         <div class="rc-flash notify" id="rcNotify" hidden>
@@ -46,7 +58,10 @@
             <button type="button" class="rc-btn gold" id="rcNotifyBtn">Notify me</button>
         </div>
     }
-    @if (TempData["PayError"] != null) { <div class="rc-flash err">@TempData["PayError"]</div> }
+    @if (TempData["PayError"] != null)
+    {
+        <template data-notice data-title="Payment not submitted" data-variant="error">@TempData["PayError"]</template>
+    }
 
     <article class="paper" id="receiptPaper">
         <span class="wm">VIBESHOOT</span>
@@ -154,7 +169,9 @@
 
     @if (canPayBalance)
     {
-        <form autocomplete="off" class="rc-pay" method="post" action="/booking/@b.TransactionId/pay?t=@token" enctype="multipart/form-data">
+        <form autocomplete="off" class="rc-pay" method="post" action="/booking/@b.TransactionId/pay?t=@token" enctype="multipart/form-data"
+              data-confirm="We'll send your GCash reference and receipt for @Ui.Peso(dueNow) to @b.Photographer!.Name for verification. Make sure the amount and reference number match your GCash receipt."
+              data-confirm-title="Submit balance payment?" data-confirm-ok="Submit payment">
             @Html.AntiForgeryToken()
             <div class="qr"><img src="@b.Photographer!.GCashQrPath" alt="GCash QR code" /></div>
             <div>
@@ -169,7 +186,82 @@
         </form>
     }
 
+    @if (Model.CanReview)
+    {
+        <form autocomplete="off" class="rc-review" id="rcReview" method="post" action="/booking/@b.TransactionId/review?t=@token"
+              data-confirm="Your review will appear on @b.Photographer?.Name's page as “@VibeShoot.Models.Entities.Review.ToDisplayName(b.ClientName)”. Reviews can't be edited after posting."
+              data-confirm-title="Post your review?" data-confirm-ok="Post review">
+            @Html.AntiForgeryToken()
+            <h3>How was your session with @b.Photographer?.Name?</h3>
+            <p>Your review helps other clients choose. Only clients with a completed booking can leave one.</p>
+
+            <fieldset class="rc-stars" role="radiogroup" aria-label="Your rating">
+                @for (int n = 5; n >= 1; n--)
+                {
+                    <input type="radio" name="rating" id="star@(n)" value="@n" />
+                    <label for="star@(n)" title="@n star@(n == 1 ? "" : "s")">★</label>
+                }
+                <span class="rc-stars-label" id="starLabel">Tap a star</span>
+            </fieldset>
+
+            <span class="rc-label">What did you like about this photographer?</span>
+            <div class="rc-tags">
+                @foreach (var tag in VibeShoot.Models.Entities.Review.AllowedTags)
+                {
+                    var tid = "tag-" + tag.Replace(" ", "-").ToLowerInvariant();
+                    <input type="checkbox" name="tags" value="@tag" id="@tid" /><label for="@tid">@tag</label>
+                }
+            </div>
+
+            <label class="rc-label" for="rvComment">Tell us more <span>(optional)</span></label>
+            <textarea id="rvComment" name="comment" maxlength="@VibeShoot.Models.Entities.Review.MaxComment" rows="3" placeholder="What made your session special?"></textarea>
+            <div class="rc-review-foot">
+                <small><span id="rvCount">0</span>/@VibeShoot.Models.Entities.Review.MaxComment</small>
+                <button class="rc-btn gold" type="submit">Post review</button>
+            </div>
+        </form>
+    }
+    else if (Model.Review != null)
+    {
+        <section class="rc-review done">
+            <h3>Your review</h3>
+            <div class="rc-stars-static" aria-label="@Model.Review.Rating out of 5 stars">@(new string('★', Model.Review.Rating))<span>@(new string('★', 5 - Model.Review.Rating))</span></div>
+            @if (Model.Review.TagList.Any())
+            {
+                <div class="rc-tags static">@foreach (var tag in Model.Review.TagList) { <span>@tag</span> }</div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.Review.Comment))
+            {
+                <p class="rc-review-quote">“@Model.Review.Comment”</p>
+            }
+            <small>Posted @Ui.Stamp(Model.Review.CreatedAt)@(Model.Review.IsHidden ? " · hidden by VibeShoot" : "")</small>
+        </section>
+    }
+
+    <script src="~/js/modal.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            var form = document.getElementById('rcReview');
+            if (!form) return;
+            var words = ['', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'];
+            form.querySelectorAll('input[name=rating]').forEach(function (r) {
+                r.addEventListener('change', function () { document.getElementById('starLabel').textContent = words[r.value] + ' (' + r.value + '/5)'; });
+            });
+            var ta = document.getElementById('rvComment');
+            ta.addEventListener('input', function () { document.getElementById('rvCount').textContent = ta.value.length; });
+            // Friendly check before the "Post your review?" confirmation (the server checks again).
+            form.addEventListener('vs:beforeconfirm', function (e) {
+                var picked = form.querySelector('input[name=rating]:checked');
+                var liked = form.querySelectorAll('input[name=tags]:checked').length;
+                if (!picked || (!liked && !ta.value.trim())) {
+                    e.preventDefault();
+                    vsModal.notice({ title: 'Almost there', variant: 'info',
+                        message: !picked ? 'Please choose a star rating.' : 'Pick at least one thing you liked, or write a short comment.' });
+                }
+            });
+        })();
+    </script>
     <script src="~/js/shrinkImage.js" asp-append-version="true"></script>
     <script>
         // Live refresh: every 5 seconds, ask whether the booking or its payments changed and, if so,

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Security.Cryptography;
@@ -28,6 +29,7 @@ namespace VibeShoot.Controllers
 
         [HttpPost("booking/track")]
         [ValidateAntiForgeryToken]
+        [EnableRateLimiting("track")]
         public async Task<IActionResult> Track(TrackViewModel model)
         {
             var txId = (model.TransactionId ?? "").Trim().ToUpperInvariant();
@@ -49,7 +51,76 @@ namespace VibeShoot.Controllers
             var booking = await LoadAsync(id, t);
             if (booking == null) return RedirectToAction(nameof(Track));
 
-            return View("~/Views/Booking/Receipt.cshtml", new ReceiptViewModel { Booking = booking });
+            var review = await _context.Reviews.FirstOrDefaultAsync(r => r.BookingTransactionId == booking.TransactionId);
+            return View("~/Views/Booking/Receipt.cshtml", new ReceiptViewModel
+            {
+                Booking = booking,
+                Review = review,
+                CanReview = review == null && Review.CanReview(booking, System.DateTime.Today),
+            });
+        }
+
+        /// <summary>
+        /// Leave a review. Only reachable with the booking's secret receipt link, only once the session is
+        /// done, and only once per booking. Everything is re-checked here; the form in the browser is just UI.
+        /// </summary>
+        [HttpPost("booking/{id}/review")]
+        [ValidateAntiForgeryToken]
+        [EnableRateLimiting("reviews")]
+        public async Task<IActionResult> SubmitReview(string id, string t, int rating, string[]? tags, string? comment)
+        {
+            var booking = await LoadAsync(id, t);
+            if (booking == null) return RedirectToAction(nameof(Track));
+
+            string? error = null;
+            var cleanTags = (tags ?? System.Array.Empty<string>())
+                .Where(tag => Review.AllowedTags.Contains(tag))     // only the fixed list, nothing typed in
+                .Distinct()
+                .ToList();
+            var cleanComment = CleanText(comment, Review.MaxComment);
+
+            if (!Review.CanReview(booking, System.DateTime.Today)) error = "You can leave a review once your session is done.";
+            else if (await _context.Reviews.AnyAsync(r => r.BookingTransactionId == booking.TransactionId)) error = "You already reviewed this booking. Thank you!";
+            else if (rating < 1 || rating > 5) error = "Please choose 1 to 5 stars.";
+            else if (cleanTags.Count == 0 && string.IsNullOrEmpty(cleanComment)) error = "Please pick at least one thing you liked, or write a short comment.";
+
+            if (error != null)
+            {
+                TempData["ReviewError"] = error;
+                return RedirectToAction(nameof(Receipt), new { id, t });
+            }
+
+            _context.Reviews.Add(new Review
+            {
+                PhotographerId = booking.PhotographerId,
+                BookingTransactionId = booking.TransactionId,
+                Rating = rating,
+                Tags = string.Join(",", cleanTags),
+                Comment = cleanComment,
+                DisplayName = Review.ToDisplayName(booking.ClientName),
+                Category = booking.Category,
+            });
+            try
+            {
+                await _context.SaveChangesAsync();
+                TempData["ReviewThanks"] = "1";
+            }
+            catch (DbUpdateException)
+            {
+                // Two submits at the same moment: the unique index keeps it to one review.
+                TempData["ReviewError"] = "You already reviewed this booking. Thank you!";
+            }
+            return RedirectToAction(nameof(Receipt), new { id, t });
+        }
+
+        /// <summary>Trims, removes control characters and caps the length. (Razor HTML-encodes it again on output.)</summary>
+        private static string? CleanText(string? text, int max)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return null;
+            var chars = text.Where(c => !char.IsControl(c) || c == '\n').ToArray();
+            var s = new string(chars).Trim();
+            if (s.Length > max) s = s[..max];
+            return s.Length == 0 ? null : s;
         }
 
         /// <summary>Booking status for the client's browser to watch (notifications when it gets confirmed).</summary>
@@ -74,6 +145,7 @@ namespace VibeShoot.Controllers
         /// <summary>Lets a client send the remaining balance through GCash from their receipt page.</summary>
         [HttpPost("booking/{id}/pay")]
         [ValidateAntiForgeryToken]
+        [EnableRateLimiting("forms")]
         [RequestSizeLimit(12 * 1024 * 1024)]
         public async Task<IActionResult> PayBalance(string id, string t, string referenceNumber, Microsoft.AspNetCore.Http.IFormFile receiptImage)
         {

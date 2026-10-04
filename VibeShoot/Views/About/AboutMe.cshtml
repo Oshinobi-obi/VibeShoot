@@ -190,6 +190,94 @@
         </div>
     </section>
 
+    @* ---------- Reviews ---------- *@
+    @{
+        var rv = Model.Reviews;
+        var starPct = (rv.Average / 5 * 100).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+    }
+    <section class="ab-section" id="reviews">
+        <div class="ab-section-head reveal">
+            <div>
+                <span class="ab-kicker">Reviews</span>
+                <h2>What clients say</h2>
+            </div>
+            @if (rv.Count > 0)
+            {
+                <div class="ab-rating-big" aria-label="Rated @rv.Average.ToString("0.0") out of 5 by @rv.Count verified clients">
+                    <b>@rv.Average.ToString("0.0")</b>
+                    <div>
+                        <span class="ab-stars" style="--pct:@starPct%"><i>★★★★★</i></span>
+                        <small>from @rv.Count verified client@(rv.Count == 1 ? "" : "s")</small>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (rv.Count == 0)
+        {
+            <div class="ab-reviews-empty reveal">
+                <span class="ab-stars" style="--pct:0%"><i>★★★★★</i></span>
+                <p>No reviews yet. Clients can leave a review from their booking receipt after their session.</p>
+            </div>
+        }
+        else
+        {
+            <div class="ab-reviews">
+                <aside class="ab-reviews-side reveal">
+                    <div class="ab-breakdown">
+                        @for (int n = 5; n >= 1; n--)
+                        {
+                            var c = rv.Breakdown.TryGetValue(n, out var v) ? v : 0;
+                            <div class="ab-bar-row">
+                                <span>@n ★</span>
+                                <span class="ab-bar"><i style="width:@(rv.Count == 0 ? 0 : c * 100 / rv.Count)%"></i></span>
+                                <span class="ab-bar-count">@c</span>
+                            </div>
+                        }
+                    </div>
+                    @if (rv.TopTags.Any())
+                    {
+                        <h3>What clients liked</h3>
+                        <div class="ab-liked">
+                            @foreach (var tag in rv.TopTags)
+                            {
+                                <span>@tag.Key <b>@tag.Value</b></span>
+                            }
+                        </div>
+                    }
+                </aside>
+
+                <div class="ab-review-list">
+                    @foreach (var (r, i) in rv.Latest.Select((r, i) => (r, i)))
+                    {
+                        <article class="ab-review reveal" style="--d:@(i * 80)ms">
+                            <header>
+                                <span class="ab-stars sm" style="--pct:@(r.Rating * 20)%" aria-label="@r.Rating out of 5 stars"><i>★★★★★</i></span>
+                                <time datetime="@r.CreatedAt.ToString("yyyy-MM-dd")">@Ui.Local(r.CreatedAt).ToString("MMM yyyy")</time>
+                            </header>
+                            @if (!string.IsNullOrWhiteSpace(r.Comment))
+                            {
+                                <p>“@r.Comment”</p>
+                            }
+                            @if (r.TagList.Any())
+                            {
+                                <div class="ab-review-tags">@foreach (var tag in r.TagList) { <span>@tag</span> }</div>
+                            }
+                            <footer>
+                                <b>@r.DisplayName</b>
+                                <span>@r.Category</span>
+                                <span class="ab-verified" title="Left from a real, completed booking">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="m5 12 5 5L20 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                    Verified client
+                                </span>
+                            </footer>
+                        </article>
+                    }
+                </div>
+            </div>
+        }
+    </section>
+
     @* ---------- Closing CTA ---------- *@
     <section class="ab-final reveal">
         @if (Model.CoverImages.Count > 1)

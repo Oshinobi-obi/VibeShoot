@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VibeShoot.Data;
@@ -73,6 +75,22 @@ namespace VibeShoot.Controllers
                         Highlights = k.InclusionList.Take(4).ToList()
                     })
                     .ToList()
+            };
+
+            // Reviews (hidden ones are left out entirely).
+            var reviews = await _context.Reviews
+                .Where(r => r.PhotographerId == entity.Id && !r.IsHidden)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+            model.Reviews = new ReviewSummary
+            {
+                Count = reviews.Count,
+                Average = reviews.Count == 0 ? 0 : Math.Round(reviews.Average(r => r.Rating), 1),
+                Breakdown = Enumerable.Range(1, 5).ToDictionary(n => n, n => reviews.Count(r => r.Rating == n)),
+                TopTags = reviews.SelectMany(r => r.TagList)
+                    .GroupBy(tag => tag).Select(g => new KeyValuePair<string, int>(g.Key, g.Count()))
+                    .OrderByDescending(kv => kv.Value).Take(6).ToList(),
+                Latest = reviews.Take(6).ToList(),
             };
 
             // Not enough photos for a separate grid? Reuse what we have.

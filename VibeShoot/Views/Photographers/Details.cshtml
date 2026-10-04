@@ -36,6 +36,12 @@
                         <img src="@c.LogoPath" alt="@c.Name logo" />
                     </span>
                     <span class="vs-photog-name">@c.Name</span>
+                    @if (c.ReviewCount > 0)
+                    {
+                        <span class="vs-photog-rating" aria-label="@c.Rating.ToString("0.0") out of 5 stars from @c.ReviewCount reviews">
+                            <b>★</b> @c.Rating.ToString("0.0") <small>(@c.ReviewCount)</small>
+                        </span>
+                    }
                     <span class="vs-photog-meta">
                         @(c.PhotoCount > 0 ? $"{c.PhotoCount} photos" : "Portfolio soon")
                         @if (c.StartingPrice != null) { <text> · from @Ui.Peso(c.StartingPrice.Value).Replace(".00", "")</text> }

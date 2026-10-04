@@ -215,4 +215,27 @@ UPDATE `Bookings` SET `OriginalPrice` = `TotalPrice`;
 INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`)
 VALUES ('20261003133926_AddPackageDiscounts', '9.0.0');
 
+CREATE TABLE `Reviews` (
+    `Id` int NOT NULL AUTO_INCREMENT,
+    `PhotographerId` int NOT NULL,
+    `BookingTransactionId` varchar(32) CHARACTER SET utf8mb4 NOT NULL,
+    `Rating` int NOT NULL,
+    `Tags` varchar(512) CHARACTER SET utf8mb4 NOT NULL,
+    `Comment` varchar(600) CHARACTER SET utf8mb4 NULL,
+    `DisplayName` varchar(64) CHARACTER SET utf8mb4 NOT NULL,
+    `Category` varchar(64) CHARACTER SET utf8mb4 NOT NULL,
+    `IsHidden` tinyint(1) NOT NULL,
+    `CreatedAt` datetime(6) NOT NULL,
+    CONSTRAINT `PK_Reviews` PRIMARY KEY (`Id`),
+    CONSTRAINT `FK_Reviews_Bookings_BookingTransactionId` FOREIGN KEY (`BookingTransactionId`) REFERENCES `Bookings` (`TransactionId`) ON DELETE CASCADE,
+    CONSTRAINT `FK_Reviews_Photographers_PhotographerId` FOREIGN KEY (`PhotographerId`) REFERENCES `Photographers` (`Id`) ON DELETE CASCADE
+) CHARACTER SET=utf8mb4;
+
+CREATE UNIQUE INDEX `IX_Reviews_BookingTransactionId` ON `Reviews` (`BookingTransactionId`);
+
+CREATE INDEX `IX_Reviews_PhotographerId_IsHidden_CreatedAt` ON `Reviews` (`PhotographerId`, `IsHidden`, `CreatedAt`);
+
+INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`)
+VALUES ('20261004020938_AddReviews', '9.0.0');
+
 COMMIT;

@@ -361,3 +361,19 @@
         color: #f5f5f2;
         border-color: rgba(201,162,39,0.6);
     }
+
+
+.vs-photog-rating {
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.8rem;
+    color: rgba(245,245,242,0.85);
+    margin-top: -8px;
+}
+
+    .vs-photog-rating b {
+        color: rgb(201,162,39);
+    }
+
+    .vs-photog-rating small {
+        color: rgba(245,245,242,0.5);
+    }

@@ -39,9 +39,15 @@ namespace VibeShoot.Controllers
             // Starting rate = cheapest active package today, after any discount.
             var today = System.DateTime.Today;
             var packages = await _context.Packages.Where(k => k.IsActive && k.Price > 0).ToListAsync();
+            var ratings = await _context.Reviews.Where(r => !r.IsHidden)
+                .GroupBy(r => r.PhotographerId)
+                .Select(g => new { Id = g.Key, Avg = g.Average(r => r.Rating), Count = g.Count() })
+                .ToListAsync();
             foreach (var c in cards)
             {
                 c.StartingPrice = packages.Where(k => k.PhotographerId == c.Id).Select(k => (decimal?)k.PriceOn(today)).Min();
+                var r = ratings.FirstOrDefault(x => x.Id == c.Id);
+                if (r != null) { c.Rating = System.Math.Round(r.Avg, 1); c.ReviewCount = r.Count; }
             }
 
             return View("~/Views/Photographers/Details.cshtml", cards);

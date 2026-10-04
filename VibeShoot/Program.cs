@@ -7,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<MediaStore>();
+builder.Services.AddVibeShootRateLimits();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -32,8 +33,10 @@ if (!app.Environment.IsDevelopment())
 }
 
 if (httpsEnabled) app.UseHttpsRedirection();
+app.UseSecurityHeaders();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseRateLimiter();
 app.MapStaticAssets();
 
 app.MapControllerRoute(

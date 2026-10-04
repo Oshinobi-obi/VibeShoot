@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Globalization;
@@ -77,6 +78,7 @@ namespace VibeShoot.Controllers
 
         [HttpPost("photographer/{photographer}/api/book")]
         [ValidateAntiForgeryToken]
+        [EnableRateLimiting("forms")]
         [RequestSizeLimit(12 * 1024 * 1024)]
         public async Task<IActionResult> SubmitBooking(string photographer, [FromForm] BookingSubmission form)
         {

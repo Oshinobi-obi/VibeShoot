@@ -110,6 +110,16 @@ document.addEventListener('DOMContentLoaded', function () {
         if (state.submitted) { resetWizard(); load(); }
     }
 
+    // Closing halfway through (details typed in, not yet sent): make sure it's on purpose.
+    function requestClose() {
+        if (state.submitted || state.step === 0 || !window.vsModal) { closeWizard(); return; }
+        vsModal.confirm({
+            title: 'Discard this booking?',
+            message: 'Your details for ' + new Date(state.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) + " haven't been sent yet. If you close now, you'll need to start again.",
+            ok: 'Discard', cancel: 'Keep booking', variant: 'danger'
+        }).then(function (yes) { if (yes) closeWizard(); });
+    }
+
     function resetWizard() {
         form.reset();
         state = { date: null, category: categories[0] || null, pkg: null, start: null, step: 0, submitted: false };
@@ -118,12 +128,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     wizard.addEventListener('click', function (e) {
-        if (e.target === wizard || e.target.closest('[data-close]')) closeWizard();
+        if (e.target === wizard || e.target.closest('[data-close]')) requestClose();
     });
     document.addEventListener('keydown', function (e) {
         if (e.key !== 'Escape') return;
         if ($('termsModal').classList.contains('open')) $('termsModal').classList.remove('open');
-        else if (wizard.classList.contains('open')) closeWizard();
+        else if (wizard.classList.contains('open') && !document.querySelector('.vsm-backdrop')) requestClose();
     });
 
     function renderCategories() {
@@ -277,8 +287,17 @@ document.addEventListener('DOMContentLoaded', function () {
     $('btnBack').addEventListener('click', function () { if (state.step > 0) goTo(state.step - 1); });
     $('btnNext').addEventListener('click', function () {
         if (!validate(state.step)) return;
-        if (state.step < 2) goTo(state.step + 1);
-        else submit();
+        if (state.step < 2) { goTo(state.step + 1); return; }
+        if (!window.vsModal) { submit(); return; }
+
+        // Last chance to check everything before it's sent.
+        var d = new Date(state.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        var time = fmtHour(toHours(state.start)) + ' - ' + fmtHour(toHours(state.start) + state.pkg.hours);
+        var lines = d + ', ' + time + '\n' + state.category + ' - ' + state.pkg.name;
+        vsModal.confirm(isQuote()
+            ? { title: 'Send your request?', message: lines + '\n\nThe photographer will contact you with a quotation.', ok: 'Send request' }
+            : { title: 'Submit your booking?', message: lines + '\nDown payment sent: ' + peso(state.pkg.price / 2) + ' (GCash ref ' + $('fRef').value.replace(/\s/g, '') + ')\n\nThe photographer will verify your payment and confirm your slot.', ok: 'Submit booking' }
+        ).then(function (yes) { if (yes) submit(); });
     });
 
     function submit() {
@@ -309,6 +328,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (!res.ok) {
                     goTo(state.step);
                     $('wzError').textContent = res.error || 'Booking failed. Please try again.';
+                    if (window.vsModal) vsModal.notice({ title: "Booking not sent", message: res.error || 'Booking failed. Please try again.', variant: 'error' });
                     return;
                 }
                 state.submitted = true;

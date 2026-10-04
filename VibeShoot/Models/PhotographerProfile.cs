@@ -24,6 +24,7 @@ namespace VibeShoot.Models
         public int AlbumCount { get; set; }
         public decimal? StartingPrice { get; set; }
         public List<PackagePreview> Packages { get; set; } = new List<PackagePreview>();
+        public ReviewSummary Reviews { get; set; } = new ReviewSummary();
     }
 
     public class PackagePreview
