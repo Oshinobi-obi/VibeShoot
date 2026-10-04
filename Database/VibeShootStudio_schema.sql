@@ -238,4 +238,17 @@ CREATE INDEX `IX_Reviews_PhotographerId_IsHidden_CreatedAt` ON `Reviews` (`Photo
 INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`)
 VALUES ('20261004020938_AddReviews', '9.0.0');
 
+CREATE TABLE `DataProtectionKeys` (
+    `Id` int NOT NULL AUTO_INCREMENT,
+    `App` varchar(64) CHARACTER SET utf8mb4 NOT NULL,
+    `FriendlyName` varchar(128) CHARACTER SET utf8mb4 NULL,
+    `Xml` longtext CHARACTER SET utf8mb4 NOT NULL,
+    CONSTRAINT `PK_DataProtectionKeys` PRIMARY KEY (`Id`)
+) CHARACTER SET=utf8mb4;
+
+CREATE INDEX `IX_DataProtectionKeys_App` ON `DataProtectionKeys` (`App`);
+
+INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`)
+VALUES ('20261004072826_AddDataProtectionKeys', '9.0.0');
+
 COMMIT;

@@ -377,3 +377,20 @@
     .vs-photog-rating small {
         color: rgba(245,245,242,0.5);
     }
+
+
+.vs-privacy-link {
+    display: block;
+    margin-top: 14px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.75rem;
+    color: rgba(245,245,242,0.4);
+    text-decoration: none;
+    opacity: 0;
+    animation: vs-cardIn 0.75s cubic-bezier(.16,.9,.2,1) forwards;
+    animation-delay: 3.6s;
+}
+
+    .vs-privacy-link:hover {
+        color: rgba(245,245,242,0.8);
+    }
