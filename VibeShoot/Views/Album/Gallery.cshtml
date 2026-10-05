@@ -1,113 +1,106 @@
-﻿@using System.Linq
+@using System.Linq
 @model VibeShoot.Models.AlbumViewModel
 @{
     ViewData["Title"] = Model.Name;
     Layout = "_Layout";
+    var photos = Model.Categories.SelectMany(c => c.ImageUrls.Select(u => (Url: u, Cat: c))).ToList();
+    var albums = Model.Categories.Count(c => c.ImageUrls.Count > 0);
+    var tagline = string.IsNullOrWhiteSpace(Model.Tagline) ? "A collection of moments, told in light." : Model.Tagline;
 }
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="~/css/Album.css" asp-append-version="true" />
+@section Styles {
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/Album.css" asp-append-version="true" />
+}
 
 <div class="vs-iris-in" aria-hidden="true"></div>
 
 <partial name="_PhotographerNav" model="@(new VibeShoot.Models.NavContext { Slug = Model.Slug, ActiveTab = "Album" })" />
 
-<div class="vs-page">
+<div class="vs-page" id="albumPage">
     <div class="vs-bg-layer">
         <div class="vs-bokeh"></div>
         <div class="vs-bokeh blur"></div>
         <div class="vs-bokeh"></div>
     </div>
     <div class="vs-grain"></div>
-    <div class="vs-vignette"></div>
 
-    <div class="vs-gallery-wrap">
-        <span class="vs-eyebrow">Photographer Gallery</span>
-        <div class="vs-gallery-header">
-            <span class="vs-mini-logo">
-                <img src="@Model.LogoPath" alt="@Model.Name logo" />
+    <header class="al-hero">
+        @if (Model.CoverImage != null)
+        {
+            <div class="al-hero-bg" style="background-image:url('@Model.CoverImage')" aria-hidden="true"></div>
+        }
+        <div class="al-hero-shade" aria-hidden="true"></div>
+        <div class="al-hero-inner">
+            <span class="al-logo"><img src="@Model.LogoPath" alt="@Model.Name logo" /></span>
+            <span class="al-eyebrow">Portfolio</span>
+            <h1 class="al-title">@Model.Name</h1>
+            <p class="al-tagline">@tagline</p>
+            <div class="al-meta">
+                @if (Model.TotalCount > 0)
+                {
+                    <span><b>@Model.TotalCount</b> photo@(Model.TotalCount == 1 ? "" : "s")</span>
+                    <i></i>
+                    <span><b>@albums</b> album@(albums == 1 ? "" : "s")</span>
+                    <i></i>
+                }
+                <a data-iris href="/photographer/@Model.Slug/schedule">Book a session &rarr;</a>
+            </div>
+        </div>
+    </header>
+
+    @if (photos.Count == 0)
+    {
+        <section class="al-empty">
+            <span class="al-empty-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Zm8 3.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>
             </span>
-            <h1 class="vs-gallery-title">@Model.Name</h1>
-        </div>
-
-        <div class="vs-tabs">
-            @for (int t = 0; t < Model.Categories.Count; t++)
-            {
-                var cat = Model.Categories[t];
-                <button type="button" class="vs-tab @(t == 0 ? "active" : "")" data-target="@cat.Slug">@cat.Name</button>
-            }
-        </div>
-
-        <div class="vs-panels">
+            <h2>The portfolio is being curated</h2>
+            <p>New photos are on their way. In the meantime, check the available dates and book your session.</p>
+            <a class="al-btn" data-iris href="/photographer/@Model.Slug/schedule">See available dates</a>
+        </section>
+    }
+    else
+    {
+        <nav class="al-filters" aria-label="Albums">
+            <button type="button" class="al-chip on" data-filter="all">All <span>@photos.Count</span></button>
             @foreach (var cat in Model.Categories)
             {
-                var isFirst = cat == Model.Categories[0];
-                <div class="vs-panel @(isFirst ? "active" : "")" data-category="@cat.Slug">
-                    @if (cat.ImageUrls.Count == 0)
-                    {
-                        <p class="vs-empty">No @cat.Name.ToLower() photos yet — check back soon.</p>
-                    }
-                    else if (cat.ImageUrls.Count <= 5)
-                    {
-                        <div class="vs-photo-grid">
-                            @for (int i = 0; i < cat.ImageUrls.Count; i++)
-                            {
-                                <div class="vs-photo-thumb" data-category="@cat.Slug" data-index="@i" style="--stagger-idx: @i;" tabindex="0" role="button" aria-label="Open @cat.Name photo @(i + 1)">
-                                    <img src="@cat.ImageUrls[i]" alt="@Model.Name @cat.Name photo @(i + 1)" loading="lazy" />
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="vs-carousel">
-                            <button type="button" class="vs-carousel-btn" data-dir="prev" aria-label="Scroll @cat.Name photos left">
-                                <svg viewBox="0 0 24 24"><path d="M14.7 5.3 8 12l6.7 6.7 1.4-1.4L10.8 12l5.3-5.3z" /></svg>
-                            </button>
-                            <div class="vs-carousel-track">
-                                <div class="vs-carousel-inner">
-                                    @for (int i = 0; i < cat.ImageUrls.Count; i++)
-                                    {
-                                        <div class="vs-photo-thumb" data-category="@cat.Slug" data-index="@i" style="--stagger-idx: @i;" tabindex="0" role="button" aria-label="Open @cat.Name photo @(i + 1)">
-                                            <img src="@cat.ImageUrls[i]" alt="@Model.Name @cat.Name photo @(i + 1)" loading="lazy" />
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                            <button type="button" class="vs-carousel-btn" data-dir="next" aria-label="Scroll @cat.Name photos right">
-                                <svg viewBox="0 0 24 24"><path d="M9.3 5.3 16 12l-6.7 6.7-1.4-1.4L13.2 12 7.9 6.7z" /></svg>
-                            </button>
-                        </div>
-                    }
-                </div>
+                <button type="button" class="al-chip" data-filter="@cat.Slug" @(cat.ImageUrls.Count == 0 ? "disabled" : "")>@cat.Name <span>@cat.ImageUrls.Count</span></button>
             }
-        </div>
-    </div>
+        </nav>
+
+        <section class="al-grid" id="alGrid">
+            @for (int i = 0; i < photos.Count; i++)
+            {
+                var (url, cat) = photos[i];
+                <figure class="al-item" data-cat="@cat.Slug" data-index="@i" style="--d:@((i % 12) * 55)ms">
+                    <button type="button" aria-label="Open @cat.Name photo">
+                        <img src="@url" alt="@Model.Name — @cat.Name" loading="lazy" decoding="async" />
+                        <figcaption><span>@cat.Name</span><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg></figcaption>
+                    </button>
+                </figure>
+            }
+        </section>
+
+        <section class="al-cta">
+            <p>Like what you see?</p>
+            <a class="al-btn" data-iris href="/photographer/@Model.Slug/schedule">Book your session</a>
+        </section>
+    }
 </div>
 
-<div class="vs-lightbox" id="vsLightbox" aria-hidden="true">
-    <div class="vs-lightbox-frame">
-        <button type="button" class="vs-lightbox-close" id="vsLightboxClose" aria-label="Close">&times;</button>
-        <button type="button" class="vs-lightbox-nav vs-lightbox-prev" id="vsLightboxPrev" aria-label="Previous photo">
-            <svg viewBox="0 0 24 24"><path d="M14.7 5.3 8 12l6.7 6.7 1.4-1.4L10.8 12l5.3-5.3z" /></svg>
-        </button>
-        <img id="vsLightboxImg" src="" alt="" />
-        <button type="button" class="vs-lightbox-nav vs-lightbox-next" id="vsLightboxNext" aria-label="Next photo">
-            <svg viewBox="0 0 24 24"><path d="M9.3 5.3 16 12l-6.7 6.7-1.4-1.4L13.2 12 7.9 6.7z" /></svg>
-        </button>
+<div class="al-lightbox" id="alLightbox" role="dialog" aria-modal="true" aria-label="Photo viewer" hidden>
+    <div class="al-lb-top">
+        <span class="al-lb-count" id="alLbCount"></span>
+        <span class="al-lb-cat" id="alLbCat"></span>
+        <button type="button" class="al-lb-btn" id="alLbClose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button>
     </div>
+    <button type="button" class="al-lb-btn al-lb-nav prev" id="alLbPrev" aria-label="Previous photo"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
+    <figure class="al-lb-stage"><img id="alLbImg" src="" alt="" /></figure>
+    <button type="button" class="al-lb-btn al-lb-nav next" id="alLbNext" aria-label="Next photo"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
 </div>
 
 @section Scripts {
-    <script>
-        var vsGalleryData = {
-            @foreach (var cat in Model.Categories)
-            {
-                    @:"@cat.Slug": [@Html.Raw(string.Join(",", cat.ImageUrls.Select(u => "\"" + u + "\"")))],
-            }
-        };
-    </script>
     <script src="~/js/Album.js" asp-append-version="true"></script>
 }

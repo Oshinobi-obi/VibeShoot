@@ -1,26 +1,49 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" style="background:#0a0a0c">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0a0a0c" />
     <title>@ViewData["Title"] - VibeShoot</title>
+    <link rel="icon" type="image/svg+xml" href="~/favicon.svg" asp-append-version="true" />
     <script type="importmap"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Navbar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Modal.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/VibeShoot.styles.css" asp-append-version="true" />
-    <a href="/Admin/Login" style="position: fixed; bottom: 10px; right: 10px; color: rgba(255,255,255,0.1); font-size: 10px; text-decoration: none; z-index: 9999;">&pi;</a>
+    @* Dark base + closed shutter on the very first frame (after Bootstrap, which would otherwise paint the body white). *@
+    <style>
+        :root { --bs-body-bg: #0a0a0c; --bs-body-color: #f5f5f2; color-scheme: dark; }
+        html, body { background: #0a0a0c; color: #f5f5f2; }
+        .vs-iris-in {
+            position: fixed; inset: 0; z-index: 999; background: #000; pointer-events: none;
+            clip-path: circle(150% at 50% 50%); will-change: clip-path;
+            animation: vs-irisOpen 0.9s cubic-bezier(.2,.8,.2,1) 0.05s forwards;
+        }
+        @@keyframes vs-irisOpen { to { clip-path: circle(0% at 50% 50%); } }
+        @@media (prefers-reduced-motion: reduce) { .vs-iris-in { display: none; } }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+
+    @* Fetch the next page while the shutter is closing so it is ready the moment it opens. *@
+    <script type="speculationrules">
+        { "prefetch": [{ "source": "document", "where": { "href_matches": "/*" }, "eagerness": "moderate" }] }
+    </script>
 </head>
 <body>
-
     @RenderBody()
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/modal.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    
+    <script src="~/js/shrinkImage.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 
 </body>

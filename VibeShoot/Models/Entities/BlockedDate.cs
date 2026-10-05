@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace VibeShoot.Models.Entities
@@ -10,6 +10,9 @@ namespace VibeShoot.Models.Entities
         public int PhotographerId { get; set; }
         public DateTime Date { get; set; }
 
-        public Photographer Photographer { get; set; }
+        [MaxLength(256)]
+        public string? Reason { get; set; }
+
+        public Photographer? Photographer { get; set; }
     }
 }

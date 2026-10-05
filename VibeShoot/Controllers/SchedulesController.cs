@@ -1,147 +1,192 @@
-﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.IO;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using VibeShoot.Data;
 using VibeShoot.Models;
 using VibeShoot.Models.Entities;
+using VibeShoot.Services;
 
 namespace VibeShoot.Controllers
 {
     public class SchedulesController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly MediaStore _media;
 
-        public SchedulesController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
+        public SchedulesController(ApplicationDbContext context, MediaStore media)
         {
             _context = context;
-            _webHostEnvironment = webHostEnvironment;
+            _media = media;
         }
 
         [HttpGet("photographer/{photographer}/schedule")]
         public async Task<IActionResult> Book(string photographer)
         {
-            if (string.IsNullOrEmpty(photographer)) return Redirect("/photographers");
-
-            var entity = await _context.Photographers.FirstOrDefaultAsync(p => p.Slug == photographer);
+            var entity = await _context.Photographers.FirstOrDefaultAsync(p => p.Slug == photographer && p.IsActive);
             if (entity == null) return Redirect("/photographers");
 
-            var model = new PhotographerProfile
+            var model = new BookPageViewModel
             {
-                Slug = entity.Slug,
-                Name = entity.Name,
-                LogoPath = entity.LogoPath
+                Photographer = entity,
+                Packages = await _context.Packages
+                    .Where(p => p.PhotographerId == entity.Id && p.IsActive)
+                    .OrderBy(p => p.Category).ThenBy(p => p.SortOrder)
+                    .ToListAsync()
             };
 
             return View("~/Views/Schedules/Book.cshtml", model);
         }
 
-        [HttpPost("photographer/{photographer}/schedule")]
-        public async Task<IActionResult> Book(string photographer, BookingRequest request, [FromForm] string TimeSlot, [FromForm] string EndTime)
-        {
-            var photog = await _context.Photographers.FirstOrDefaultAsync(p => p.Slug == photographer);
-            if (photog == null) return Redirect("/photographers");
-
-            DateTime parsedDate = DateTime.TryParse(request.Date, out var pd) ? pd : DateTime.Today;
-
-            if (!TimeSpan.TryParse(TimeSlot, out TimeSpan reqStart) || !TimeSpan.TryParse(EndTime, out TimeSpan reqEnd))
-            {
-                TempData["ErrorMessage"] = "Invalid time format selected.";
-                return Redirect($"/photographer/{photographer}/schedule");
-            }
-
-            var existingBookings = await _context.Bookings
-                .Where(b => b.PhotographerId == photog.Id && b.TargetDate.Date == parsedDate.Date && b.Status != "Declined")
-                .ToListAsync();
-
-            if (existingBookings.Count >= 2)
-            {
-                TempData["ErrorMessage"] = "Sorry! This date has reached the maximum limit of 2 bookings.";
-                return Redirect($"/photographer/{photographer}/schedule");
-            }
-
-            foreach (var existing in existingBookings)
-            {
-                TimeSpan exStart, exEnd;
-
-                if (DateTime.TryParse(existing.TimeSlot, out DateTime ts)) exStart = ts.TimeOfDay;
-                else TimeSpan.TryParse(existing.TimeSlot, out exStart);
-
-                if (DateTime.TryParse(existing.EndTime, out DateTime te)) exEnd = te.TimeOfDay;
-                else TimeSpan.TryParse(existing.EndTime, out exEnd);
-
-                if (!(reqStart >= exEnd.Add(TimeSpan.FromHours(2)) || reqEnd.Add(TimeSpan.FromHours(2)) <= exStart))
-                {
-                    TempData["ErrorMessage"] = "Your selected time does not leave the required 2-hour preparation interval from another booking on this day.";
-                    return Redirect($"/photographer/{photographer}/schedule");
-                }
-            }
-
-            string savedFileName = "no-receipt.png";
-            if (request.ReceiptImage != null && request.ReceiptImage.Length > 0)
-            {
-                string uploadFolder = Path.Combine(_webHostEnvironment.WebRootPath, "Uploads", "Receipts");
-                if (!Directory.Exists(uploadFolder)) Directory.CreateDirectory(uploadFolder);
-
-                string fileExtension = Path.GetExtension(request.ReceiptImage.FileName);
-                savedFileName = $"{request.TransactionId}_{Guid.NewGuid():N}{fileExtension}";
-                string filePath = Path.Combine(uploadFolder, savedFileName);
-
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    await request.ReceiptImage.CopyToAsync(fileStream);
-                }
-            }
-
-            string formattedStart = DateTime.Today.Add(reqStart).ToString("hh:mm tt");
-            string formattedEnd = DateTime.Today.Add(reqEnd).ToString("hh:mm tt");
-
-            var newBooking = new Booking
-            {
-                TransactionId = string.IsNullOrEmpty(request.TransactionId) ? Guid.NewGuid().ToString().Substring(0, 16) : request.TransactionId,
-                PhotographerId = photog.Id,
-                ClientName = request.FullName,
-                ContactNumber = request.ContactNumber,
-                SocialLink = request.SocialLink,
-                TargetDate = parsedDate,
-                Venue = request.Venue,
-                Category = request.Category,
-                PackageName = request.SelectedPackage,
-                AmountPaid = request.AmountPaid,
-                TimeSlot = formattedStart,
-                EndTime = formattedEnd,
-                ReceiptImagePath = "/Uploads/Receipts/" + savedFileName,
-                Status = "Pending",
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.Bookings.Add(newBooking);
-            await _context.SaveChangesAsync();
-
-            return Redirect($"/photographer/{photographer}/schedule");
-        }
-
+        /// <summary>Public availability feed for the booking calendar. Contains no client details.</summary>
         [HttpGet("photographer/{photographer}/api/schedule")]
         public async Task<IActionResult> GetPhotographerSchedule(string photographer)
         {
             var photog = await _context.Photographers.FirstOrDefaultAsync(p => p.Slug == photographer);
             if (photog == null) return NotFound();
 
+            var today = DateTime.Today;
             var bookings = await _context.Bookings
-                .Where(b => b.PhotographerId == photog.Id && b.Status != "Declined")
-                .Select(b => new { b.TargetDate, b.Status })
+                .Where(b => b.PhotographerId == photog.Id && b.TargetDate >= today && b.Status != BookingStatus.Declined && b.Status != BookingStatus.Cancelled)
+                .Select(b => new { b.TargetDate, b.StartTime, b.EndTime, b.Status })
                 .ToListAsync();
 
-            var blockedDates = await _context.BlockedDates
-                .Where(b => b.PhotographerId == photog.Id)
-                .Select(b => new { b.Date })
+            var blocked = await _context.BlockedDates
+                .Where(b => b.PhotographerId == photog.Id && b.Date >= today)
+                .Select(b => b.Date)
                 .ToListAsync();
 
-            return Json(new { bookings, blockedDates });
+            var days = bookings
+                .GroupBy(b => b.TargetDate.ToString("yyyy-MM-dd"))
+                .ToDictionary(g => g.Key, g => new
+                {
+                    count = g.Count(),
+                    hasConfirmed = g.Any(b => b.Status != BookingStatus.Pending),
+                    sessions = g.Select(b => new { start = b.StartTime.ToString(@"hh\:mm"), end = b.EndTime.ToString(@"hh\:mm") })
+                });
+
+            return Json(new
+            {
+                maxPerDay = BookingRules.MaxBookingsPerDay,
+                days,
+                blocked = blocked.Select(d => d.ToString("yyyy-MM-dd"))
+            });
+        }
+
+        [HttpPost("photographer/{photographer}/api/book")]
+        [ValidateAntiForgeryToken]
+        [EnableRateLimiting("forms")]
+        [RequestSizeLimit(12 * 1024 * 1024)]
+        public async Task<IActionResult> SubmitBooking(string photographer, [FromForm] BookingSubmission form)
+        {
+            var photog = await _context.Photographers.FirstOrDefaultAsync(p => p.Slug == photographer && p.IsActive);
+            if (photog == null) return Fail("Photographer not found.");
+
+            if (!form.AcceptedTerms) return Fail("Please read and accept the Terms and Conditions.");
+            if (string.IsNullOrWhiteSpace(form.FullName)) return Fail("Please enter your full name.");
+            if (string.IsNullOrWhiteSpace(form.Venue)) return Fail("Please enter the venue / location.");
+
+            var mobile = BookingRules.NormalizeMobile(form.ContactNumber);
+            if (mobile == null) return Fail("Please enter a valid mobile number (e.g. 0917-123-4567).");
+
+            if (!DateTime.TryParseExact(form.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+                return Fail("Please choose a date on the calendar.");
+            if (date.Date <= DateTime.Today) return Fail("Bookings must be made at least one day in advance.");
+
+            if (!TimeSpan.TryParseExact(form.StartTime, @"hh\:mm", CultureInfo.InvariantCulture, out var start))
+                return Fail("Please choose a start time.");
+
+            var package = await _context.Packages.FirstOrDefaultAsync(p => p.Id == form.PackageId && p.PhotographerId == photog.Id && p.IsActive);
+            if (package == null) return Fail("Please choose a package.");
+
+            var end = start + TimeSpan.FromHours(package.DurationHours);
+
+            if (await _context.BlockedDates.AnyAsync(b => b.PhotographerId == photog.Id && b.Date == date.Date))
+                return Fail("The photographer is not available on this date. Please pick another day.");
+
+            var sameDay = await _context.Bookings
+                .Where(b => b.PhotographerId == photog.Id && b.TargetDate == date.Date && b.Status != BookingStatus.Declined && b.Status != BookingStatus.Cancelled)
+                .ToListAsync();
+            var slotError = BookingRules.CheckSlot(start, end, sameDay);
+            if (slotError != null) return Fail(slotError);
+
+            // Price is always taken from the database (including any active discount), never from the browser.
+            var today = DateTime.Today;
+            var price = package.PriceOn(today);
+            var discount = package.DiscountAmountOn(today);
+            var downPayment = BookingRules.DownPaymentFor(price);
+            string? reference = null;
+            if (downPayment > 0)
+            {
+                reference = BookingRules.NormalizeReference(form.ReferenceNumber);
+                if (reference == null) return Fail("Please enter the GCash reference number (digits only, as shown on your GCash receipt).");
+
+                var imageError = MediaStore.Validate(form.ReceiptImage);
+                if (imageError != null) return Fail("Receipt screenshot: " + imageError);
+
+                if (await _context.Payments.AnyAsync(p => p.ReferenceNumber == reference && p.Status != PaymentStatus.Rejected))
+                    return Fail("This GCash reference number has already been used for another booking.");
+            }
+
+            var booking = new Booking
+            {
+                TransactionId = IdGenerator.TransactionId(),
+                AccessToken = IdGenerator.AccessToken(),
+                PhotographerId = photog.Id,
+                PackageId = package.Id,
+                ClientName = form.FullName.Trim(),
+                ContactNumber = BookingRules.FormatMobile(mobile),
+                Email = form.Email?.Trim(),
+                SocialLink = form.SocialLink?.Trim(),
+                TargetDate = date.Date,
+                StartTime = start,
+                EndTime = end,
+                Venue = form.Venue.Trim(),
+                Category = package.Category,
+                PackageName = package.Name,
+                TotalPrice = price,
+                OriginalPrice = package.Price,
+                DiscountAmount = discount,
+                DiscountLabel = discount > 0 ? (string.IsNullOrWhiteSpace(package.DiscountLabel) ? package.DiscountBadge : package.DiscountLabel) : null,
+                DownPaymentRequired = downPayment,
+                Notes = form.Notes?.Trim(),
+                Status = BookingStatus.Pending,
+            };
+
+            if (downPayment > 0)
+            {
+                var proof = await _media.AddAsync(form.ReceiptImage!, MediaKind.Receipt);
+                if (proof == null) return Fail("Receipt screenshot: please upload a JPG, PNG or WEBP image.");
+                booking.Payments.Add(new Payment
+                {
+                    ReceiptNumber = IdGenerator.ReceiptNumber(),
+                    Amount = downPayment,
+                    Method = PaymentMethod.GCash,
+                    Type = PaymentType.DownPayment,
+                    ReferenceNumber = reference,
+                    ProofImagePath = proof,
+                    Status = PaymentStatus.ForVerification,
+                });
+            }
+
+            _context.Bookings.Add(booking);
+            await _context.SaveChangesAsync();
+
+            return Json(new
+            {
+                ok = true,
+                transactionId = booking.TransactionId,
+                receiptUrl = Url.Action("Receipt", "Booking", new { id = booking.TransactionId, t = booking.AccessToken })
+            });
+        }
+
+        private JsonResult Fail(string message)
+        {
+            Response.StatusCode = 400;
+            return Json(new { ok = false, error = message });
         }
     }
 }

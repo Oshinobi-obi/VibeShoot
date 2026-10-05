@@ -1,6 +1,156 @@
-﻿@{
-    ViewData["Title"] = "Privacy Policy";
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+@{
+    ViewData["Title"] = "Privacy Notice";
+    Layout = "_Layout";
+    var contactEmail = Config["Privacy:ContactEmail"];
+    var updated = new DateTime(2026, 10, 4);
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+@section Styles {
+    <link rel="stylesheet" href="~/css/Book.css" asp-append-version="true" />
+    <style>
+        .pv { position: relative; z-index: 5; max-width: 860px; margin: 0 auto; padding: 110px 5vw 80px; color: var(--white); }
+        .pv h1 { font-family: 'Anton', sans-serif; font-weight: 400; font-size: clamp(2.2rem, 5vw, 3.2rem); margin: 6px 0 6px; letter-spacing: 0.02em; }
+        .pv .lead { color: var(--text-2); margin: 0 0 30px; line-height: 1.7; }
+        .pv .updated { color: var(--text-3); font-size: 0.8rem; }
+        .pv section { background: rgba(18,18,21,0.82); border: 1px solid var(--line); border-radius: 18px; padding: 24px 26px; margin-bottom: 16px; backdrop-filter: blur(10px); }
+        .pv h2 { font-size: 1.05rem; font-weight: 600; margin: 0 0 12px; color: var(--gold-2); letter-spacing: 0.02em; }
+        .pv p, .pv li { color: var(--text-2); line-height: 1.75; font-size: 0.93rem; }
+        .pv p { margin: 0 0 10px; }
+        .pv ul { margin: 0; padding-left: 20px; }
+        .pv li { margin-bottom: 6px; }
+        .pv b { color: var(--white); font-weight: 500; }
+        .pv a { color: var(--gold-2); }
+        .pv table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        .pv th, .pv td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--text-2); }
+        .pv th { color: var(--text-3); font-weight: 500; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; }
+        .pv td:first-child { color: var(--white); white-space: nowrap; }
+        .pv .back { display: inline-block; margin-top: 10px; color: var(--text-2); text-decoration: none; }
+        @@media (max-width: 600px) { .pv section { padding: 18px; } .pv td:first-child { white-space: normal; } }
+    </style>
+}
+
+<div class="vs-iris-in" aria-hidden="true"></div>
+
+<div class="vs-page">
+    <div class="vs-bg-layer">
+        <div class="vs-bokeh"></div>
+        <div class="vs-bokeh blur"></div>
+        <div class="vs-bokeh"></div>
+    </div>
+    <div class="vs-grain"></div>
+
+    <main class="pv">
+        <a class="vs-eyebrow-sm" href="/photographers" style="text-decoration:none;">VibeShoot</a>
+        <h1>Privacy Notice</h1>
+        <p class="lead">
+            This notice explains what personal information VibeShoot collects when you book a photography session, why we
+            need it, who can see it and what your rights are under the <b>Data Privacy Act of 2012 (Republic Act No. 10173)</b>.
+            <br /><span class="updated">Last updated @updated.ToString("MMMM d, yyyy")</span>
+        </p>
+
+        <section>
+            <h2>1. Who we are</h2>
+            <p>
+                VibeShoot is an online booking service for independent photographers. When you book, your information is
+                shared with <b>the photographer you chose</b>, who handles your session, and with the <b>VibeShoot
+                administrator</b>, who runs the platform. Each photographer only sees their own clients.
+            </p>
+        </section>
+
+        <section>
+            <h2>2. What we collect</h2>
+            <table>
+                <thead><tr><th>Information</th><th>When</th><th>Why</th></tr></thead>
+                <tbody>
+                    <tr><td>Full name, mobile number</td><td>Booking</td><td>To identify your booking and contact you about it</td></tr>
+                    <tr><td>Email, Facebook/Messenger link</td><td>Booking (optional)</td><td>Another way for the photographer to reach you</td></tr>
+                    <tr><td>Event date, time, venue, package, notes</td><td>Booking</td><td>To plan and carry out your session</td></tr>
+                    <tr><td>GCash reference number and receipt screenshot</td><td>Payment</td><td>To verify your down payment or balance</td></tr>
+                    <tr><td>Star rating, compliments, comment</td><td>Review (optional)</td><td>Shown publicly to help other clients choose</td></tr>
+                    <tr><td>Your device's IP address</td><td>Every visit</td><td>Briefly, to block repeated abuse (e.g. guessing booking IDs). Not stored in our database.</td></tr>
+                </tbody>
+            </table>
+            <p style="margin-top:12px;">We do <b>not</b> collect card numbers, GCash PINs or passwords, and we never ask for them.</p>
+        </section>
+
+        <section>
+            <h2>3. How we use it</h2>
+            <ul>
+                <li>To reserve your date, confirm your booking and send you a receipt.</li>
+                <li>To verify your GCash payments and keep a record of what you paid.</li>
+                <li>To contact you about your session (changes, reminders, questions).</li>
+                <li>To show your review on the photographer's page. Only your <b>first name and last initial</b> (e.g. “Maria S.”) appear, never your full name or contact details.</li>
+            </ul>
+            <p style="margin-top:10px;">We don't sell your information, use it for advertising, or share it with anyone else unless the law requires it.</p>
+        </section>
+
+        <section>
+            <h2>4. Who can see it</h2>
+            <ul>
+                <li><b>The photographer you booked</b>: your booking, contact details and payment proofs.</li>
+                <li><b>The VibeShoot administrator</b>: all bookings, to run the platform and help resolve issues.</li>
+                <li><b>Our hosting provider</b> (MonsterASP), which stores the website and database on our behalf.</li>
+                <li><b>Anyone with your receipt link</b>: your receipt page uses a private link. Keep it to yourself; anyone you share it with can view your booking.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>5. How we protect it</h2>
+            <ul>
+                <li>The site uses an encrypted connection (HTTPS).</li>
+                <li>Receipts and payment screenshots can only be opened with your private link or by the photographer's admin account.</li>
+                <li>Admin passwords are stored scrambled (hashed), and photographer accounts can only see their own clients.</li>
+                <li>Repeated attempts to guess bookings or passwords are automatically blocked.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>6. How long we keep it</h2>
+            <p>
+                We keep booking and payment records for as long as they're needed for your session and for the
+                photographer's business records, then delete them. Reviews stay up until you ask us to remove them.
+                You can ask us to delete your information earlier (see below); we may need to keep payment records the
+                law requires us to keep.
+            </p>
+        </section>
+
+        <section>
+            <h2>7. Cookies and storage on your device</h2>
+            <ul>
+                <li><b>Security cookies</b> protect our forms against misuse. They don't track you.</li>
+                <li>If you turn on booking notifications, your browser remembers your booking so it can tell you when it's confirmed. You can clear this anytime by clearing your browser's site data.</li>
+                <li>We load fonts from Google Fonts and a PDF tool from a public code library (cdnjs). These services receive your IP address when the page loads, as with most websites.</li>
+                <li>We don't use advertising or analytics trackers.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>8. Your rights</h2>
+            <p>Under the Data Privacy Act you have the right to:</p>
+            <ul>
+                <li><b>Be informed</b> about how your data is used (this notice).</li>
+                <li><b>Access</b> your data and get a copy of it.</li>
+                <li><b>Correct</b> anything that's wrong.</li>
+                <li><b>Object</b> to processing, or ask us to <b>delete or block</b> your data.</li>
+                <li><b>Data portability</b>: receive your data in a common format.</li>
+                <li><b>File a complaint</b> with the National Privacy Commission (<a href="https://privacy.gov.ph" target="_blank" rel="noopener noreferrer">privacy.gov.ph</a>) and claim damages if your rights are violated.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>9. Contact us</h2>
+            @if (!string.IsNullOrWhiteSpace(contactEmail))
+            {
+                <p>For privacy questions or requests, email <a href="mailto:@contactEmail">@contactEmail</a>. Please include your Transaction ID if your request is about a booking.</p>
+            }
+            else
+            {
+                <p>For privacy questions or requests, message the photographer you booked through their Facebook page (linked on their profile), and include your Transaction ID.</p>
+            }
+            <p>We'll reply within a reasonable time and may ask you to confirm your identity first, for example with the mobile number you used when booking.</p>
+        </section>
+
+        <a class="back" href="/photographers">&larr; Back to photographers</a>
+    </main>
+</div>

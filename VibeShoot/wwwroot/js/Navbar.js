@@ -1,5 +1,5 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
-    var navLinks = document.querySelectorAll('.vs-nav-link');
+    var navLinks = document.querySelectorAll('.vs-nav-link, [data-iris]');
     var navIris = document.getElementById('navIris');
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var CLOSE_MS = 900;

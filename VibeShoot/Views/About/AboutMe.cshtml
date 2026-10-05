@@ -1,53 +1,300 @@
-﻿@model VibeShoot.Models.PhotographerProfile
+@model VibeShoot.Models.PhotographerProfile
 @{
     ViewData["Title"] = Model.Name;
     Layout = "_Layout";
+
+    // Split the bio into a pull-quote (its opening sentences, at least ~60 characters) and the rest.
+    var bio = (Model.Bio ?? "").Trim();
+    var cut = 0;
+    while (cut < bio.Length && cut < 60)
+    {
+        var stop = bio.IndexOfAny(new[] { '.', '!', '?' }, cut);
+        if (stop < 0) { cut = 0; break; }
+        cut = stop + 1;
+    }
+    var quote = cut > 0 && cut <= 240 && cut < bio.Length ? bio[..cut].Trim() : "";
+    var rest = quote.Length > 0 ? bio[cut..].Trim() : bio;
+    var tagline = string.IsNullOrWhiteSpace(Model.Tagline) ? "Capturing moments worth keeping." : Model.Tagline;
+
+    var socials = new List<(string Url, string Label, string Path, string ViewBox)>
+    {
+        (Model.FacebookUrl, "Facebook", "M13.5 21v-8.2h2.75l.41-3.2h-3.16V7.4c0-.93.26-1.56 1.6-1.56h1.7V2.98A22.7 22.7 0 0 0 14.1 2.8c-2.53 0-4.26 1.54-4.26 4.37v2.43H7.1v3.2h2.74V21h3.66Z", "0 0 24 24"),
+        (Model.InstagramUrl, "Instagram", "M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm0 5.8a2.3 2.3 0 1 1 0-4.6 2.3 2.3 0 0 1 0 4.6Zm4.46-6.03a.82.82 0 1 1-1.64 0 .82.82 0 0 1 1.64 0ZM12 4.9c2.4 0 2.68 0 3.63.05.88.04 1.35.19 1.67.31.42.16.72.35 1.03.66.31.31.5.61.66 1.03.12.32.27.79.31 1.67.05.95.05 1.23.05 3.63s0 2.68-.05 3.63c-.04.88-.19 1.35-.31 1.67-.16.42-.35.72-.66 1.03-.31.31-.61.5-1.03.66-.32.12-.79.27-1.67.31-.95.05-1.23.05-3.63.05s-2.68 0-3.63-.05c-.88-.04-1.35-.19-1.67-.31a2.77 2.77 0 0 1-1.03-.66 2.77 2.77 0 0 1-.66-1.03c-.12-.32-.27-.79-.31-1.67C4.65 14.68 4.65 14.4 4.65 12s0-2.68.05-3.63c.04-.88.19-1.35.31-1.67.16-.42.35-.72.66-1.03.31-.31.61-.5 1.03-.66.32-.12.79-.27 1.67-.31C9.32 4.9 9.6 4.9 12 4.9Zm0-1.62c-2.44 0-2.74.01-3.7.06-.96.04-1.62.2-2.2.42-.6.23-1.1.55-1.61 1.05-.5.5-.82 1.01-1.05 1.61-.22.58-.38 1.24-.42 2.2-.05.96-.06 1.26-.06 3.7s.01 2.74.06 3.7c.04.96.2 1.62.42 2.2.23.6.55 1.1 1.05 1.61.5.5 1.01.82 1.61 1.05.58.22 1.24.38 2.2.42.96.05 1.26.06 3.7.06s2.74-.01 3.7-.06c.96-.04 1.62-.2 2.2-.42.6-.23 1.1-.55 1.61-1.05.5-.5.82-1.01 1.05-1.61.22-.58.38-1.24.42-2.2.05-.96.06-1.26.06-3.7s-.01-2.74-.06-3.7c-.04-.96-.2-1.62-.42-2.2a4.4 4.4 0 0 0-1.05-1.61 4.4 4.4 0 0 0-1.61-1.05c-.58-.22-1.24-.38-2.2-.42-.96-.05-1.26-.06-3.7-.06Z", "0 0 24 24"),
+        (Model.TikTokUrl, "TikTok", "M16.5 3h-2.8v11.9a2.6 2.6 0 1 1-1.85-2.49v-2.87a5.47 5.47 0 1 0 4.65 5.4V9.1a7.6 7.6 0 0 0 4.3 1.34V7.6a4.85 4.85 0 0 1-4.3-4.6Z", "0 0 24 24"),
+        (Model.XUrl, "X", "M18.901 1.153h3.68l-8.04 9.19L24 22.847h-7.406l-5.8-7.584-6.64 7.584H.47l8.6-9.83L0 1.153h7.594l5.243 6.932z", "-3 -3 30 30"),
+    }.Where(s => !string.IsNullOrWhiteSpace(s.Url) && s.Url != "#").ToList();
 }
 
-<link rel="stylesheet" href="~/css/About.css" asp-append-version="true" />
+@section Styles {
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/About.css" asp-append-version="true" />
+}
 
 <div class="vs-iris-in" aria-hidden="true"></div>
 
 <partial name="_PhotographerNav" model="@(new VibeShoot.Models.NavContext { Slug = Model.Slug, ActiveTab = "About" })" />
 
-<div class="vs-page">
+<div class="vs-page" id="aboutPage">
     <div class="vs-bg-layer">
         <div class="vs-bokeh"></div>
         <div class="vs-bokeh blur"></div>
         <div class="vs-bokeh"></div>
     </div>
     <div class="vs-grain"></div>
-    <div class="vs-vignette"></div>
 
-    <div class="vs-about-wrap">
-        <div class="vs-about-card">
-            <span class="vs-about-logo-ring">
-                <img src="@Model.LogoPath" alt="@Model.Name logo" />
-            </span>
+    @* ---------- Hero ---------- *@
+    <section class="ab-hero">
+        <div class="ab-hero-bg" aria-hidden="true">
+            @for (int i = 0; i < Model.CoverImages.Count; i++)
+            {
+                <div class="ab-slide @(i == 0 ? "on" : "")" style="background-image:url('@Model.CoverImages[i]')"></div>
+            }
+        </div>
+        <div class="ab-hero-shade" aria-hidden="true"></div>
 
-            <div class="vs-about-info">
-                <span class="vs-eyebrow">Photographer Profile</span>
-                <h1 class="vs-about-name">@Model.Name</h1>
-                <p class="vs-about-bio">@Model.Bio</p>
+        <div class="ab-hero-inner">
+            <div class="ab-hero-copy">
+                <div class="ab-id">
+                    <span class="ab-logo"><img src="@Model.LogoPath" alt="@Model.Name logo" /></span>
+                    <span class="ab-eyebrow">Photographer Profile</span>
+                </div>
+                <h1 class="ab-name">@Model.Name</h1>
+                <p class="ab-tagline">@tagline</p>
 
-                <div class="vs-social-block">
-                    <span class="vs-social-label">Social Media Accounts Click Here</span>
-                    <div class="vs-social-row">
-                        <a class="vs-social-icon" href="@Model.FacebookUrl" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                            <svg viewBox="0 0 24 24"><path d="M13.5 21v-8.2h2.75l.41-3.2h-3.16V7.4c0-.93.26-1.56 1.6-1.56h1.7V2.98A22.7 22.7 0 0 0 14.1 2.8c-2.53 0-4.26 1.54-4.26 4.37v2.43H7.1v3.2h2.74V21h3.66Z" /></svg>
-                        </a>
-                        <a class="vs-social-icon" href="@Model.InstagramUrl" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                            <svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm0 5.8a2.3 2.3 0 1 1 0-4.6 2.3 2.3 0 0 1 0 4.6Zm4.46-6.03a.82.82 0 1 1-1.64 0 .82.82 0 0 1 1.64 0ZM12 4.9c2.4 0 2.68 0 3.63.05.88.04 1.35.19 1.67.31.42.16.72.35 1.03.66.31.31.5.61.66 1.03.12.32.27.79.31 1.67.05.95.05 1.23.05 3.63s0 2.68-.05 3.63c-.04.88-.19 1.35-.31 1.67-.16.42-.35.72-.66 1.03-.31.31-.61.5-1.03.66-.32.12-.79.27-1.67.31-.95.05-1.23.05-3.63.05s-2.68 0-3.63-.05c-.88-.04-1.35-.19-1.67-.31a2.77 2.77 0 0 1-1.03-.66 2.77 2.77 0 0 1-.66-1.03c-.12-.32-.27-.79-.31-1.67C4.65 14.68 4.65 14.4 4.65 12s0-2.68.05-3.63c.04-.88.19-1.35.31-1.67.16-.42.35-.72.66-1.03.31-.31.61-.5 1.03-.66.32-.12.79-.27 1.67-.31C9.32 4.9 9.6 4.9 12 4.9Zm0-1.62c-2.44 0-2.74.01-3.7.06-.96.04-1.62.2-2.2.42-.6.23-1.1.55-1.61 1.05-.5.5-.82 1.01-1.05 1.61-.22.58-.38 1.24-.42 2.2-.05.96-.06 1.26-.06 3.7s.01 2.74.06 3.7c.04.96.2 1.62.42 2.2.23.6.55 1.1 1.05 1.61.5.5 1.01.82 1.61 1.05.58.22 1.24.38 2.2.42.96.05 1.26.06 3.7.06s2.74-.01 3.7-.06c.96-.04 1.62-.2 2.2-.42.6-.23 1.1-.55 1.61-1.05.5-.5.82-1.01 1.05-1.61.22-.58.38-1.24.42-2.2.05-.96.06-1.26.06-3.7s-.01-2.74-.06-3.7c-.04-.96-.2-1.62-.42-2.2a4.4 4.4 0 0 0-1.05-1.61 4.4 4.4 0 0 0-1.61-1.05c-.58-.22-1.24-.38-2.2-.42-.96-.05-1.26-.06-3.7-.06Z" /></svg>
-                        </a>
-                        <a class="vs-social-icon" href="@Model.TikTokUrl" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
-                            <svg viewBox="0 0 24 24"><path d="M16.5 3h-2.8v11.9a2.6 2.6 0 1 1-1.85-2.49v-2.87a5.47 5.47 0 1 0 4.65 5.4V9.1a7.6 7.6 0 0 0 4.3 1.34V7.6a4.85 4.85 0 0 1-4.3-4.6Z" /></svg>
-                        </a>
-                        <a class="vs-social-icon" href="@Model.XUrl" target="_blank" rel="noopener noreferrer" aria-label="X">
-                            <svg viewBox="-3 -3 30 30"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.847h-7.406l-5.8-7.584-6.64 7.584H.47l8.6-9.83L0 1.153h7.594l5.243 6.932z" /></svg>
-                        </a>
+                <div class="ab-cta">
+                    <a class="ab-btn ab-btn-gold" data-iris href="/photographer/@Model.Slug/schedule">Book a session</a>
+                    <a class="ab-btn ab-btn-line" data-iris href="/photographer/@Model.Slug/album">View album</a>
+                </div>
+
+                @if (socials.Any())
+                {
+                    <div class="ab-socials">
+                        @foreach (var s in socials)
+                        {
+                            <a href="@s.Url" target="_blank" rel="noopener noreferrer" aria-label="@s.Label"><svg viewBox="@s.ViewBox"><path d="@s.Path" /></svg></a>
+                        }
+                    </div>
+                }
+            </div>
+
+            @if (Model.CoverImages.Count > 0)
+            {
+                <div class="ab-stack" aria-hidden="true">
+                    @foreach (var img in Model.CoverImages.Take(3).Reverse())
+                    {
+                        <figure class="ab-polaroid"><img src="@img" alt="" /></figure>
+                    }
+                </div>
+            }
+        </div>
+
+        <span class="ab-scroll" aria-hidden="true"><i></i>Scroll</span>
+    </section>
+
+    @* ---------- Stats ---------- *@
+    <section class="ab-stats reveal">
+        @if (Model.PhotoCount > 0)
+        {
+            <div><b data-count="@Model.PhotoCount">@Model.PhotoCount</b><span>Photos in the portfolio</span></div>
+            <div><b data-count="@Model.AlbumCount">@Model.AlbumCount</b><span>Event albums</span></div>
+        }
+        <div><b>@(Model.StartingPrice != null ? Ui.Peso(Model.StartingPrice.Value).Replace(".00", "") : "Quote")</b><span>@(Model.StartingPrice != null ? "Starting rate" : "Custom packages")</span></div>
+        <div><b>2</b><span>Sessions a day, max</span></div>
+    </section>
+
+    @* ---------- Story ---------- *@
+    @if (!string.IsNullOrWhiteSpace(bio))
+    {
+        <section class="ab-section ab-story">
+            <div class="ab-story-head reveal">
+                <span class="ab-kicker">The story</span>
+                <h2>Behind the lens</h2>
+            </div>
+            <div class="ab-story-body reveal">
+                @if (quote.Length > 0)
+                {
+                    <blockquote>@quote</blockquote>
+                }
+                @if (rest.Length > 0)
+                {
+                    <p>@rest</p>
+                }
+            </div>
+        </section>
+    }
+
+    @* ---------- Selected work ---------- *@
+    @if (Model.Showcase.Count > 0)
+    {
+        <section class="ab-section">
+            <div class="ab-section-head reveal">
+                <div>
+                    <span class="ab-kicker">Portfolio</span>
+                    <h2>Selected work</h2>
+                </div>
+                <a class="ab-link" data-iris href="/photographer/@Model.Slug/album">See the full album <span aria-hidden="true">&rarr;</span></a>
+            </div>
+            <div class="ab-work">
+                @for (int i = 0; i < Model.Showcase.Count; i++)
+                {
+                    <a class="ab-work-item reveal" style="--d:@(i * 80)ms" data-iris href="/photographer/@Model.Slug/album" aria-label="Open album">
+                        <img src="@Model.Showcase[i]" alt="@Model.Name portfolio photo @(i + 1)" loading="lazy" />
+                    </a>
+                }
+            </div>
+        </section>
+    }
+
+    @* ---------- Packages ---------- *@
+    <section class="ab-section">
+        <div class="ab-section-head reveal">
+            <div>
+                <span class="ab-kicker">Packages</span>
+                <h2>Ways to work together</h2>
+            </div>
+            <a class="ab-link" data-iris href="/photographer/@Model.Slug/schedule">Check availability <span aria-hidden="true">&rarr;</span></a>
+        </div>
+        <div class="ab-packages">
+            @foreach (var (pkg, i) in Model.Packages.Select((p, i) => (p, i)))
+            {
+                <article class="ab-pkg reveal @(i == 0 && pkg.Price > 0 ? "featured" : "")" style="--d:@(i * 100)ms">
+                    <span class="ab-pkg-cat">@pkg.Category</span>
+                    @if (pkg.DiscountBadge != null)
+                    {
+                        <span class="ab-pkg-promo">@(pkg.DiscountLabel ?? pkg.DiscountBadge)</span>
+                    }
+                    <h3>@pkg.Name</h3>
+                    <div class="ab-pkg-price">
+                        @if (pkg.Price > 0)
+                        {
+                            @if (pkg.DiscountBadge != null)
+                            {
+                                <s>@Ui.Peso(pkg.OriginalPrice).Replace(".00", "")</s>
+                            }
+                            <b>@Ui.Peso(pkg.Price).Replace(".00", "")</b><small>@pkg.Hours-hr coverage</small>
+                        }
+                        else
+                        {
+                            <b class="quote">Custom quote</b><small>@pkg.Hours-hr coverage</small>
+                        }
+                    </div>
+                    <ul>
+                        @foreach (var h in pkg.Highlights)
+                        {
+                            <li>@h</li>
+                        }
+                    </ul>
+                    <a class="ab-btn @(i == 0 && pkg.Price > 0 ? "ab-btn-gold" : "ab-btn-line") ab-btn-block" data-iris href="/photographer/@Model.Slug/schedule">@(pkg.Price > 0 ? "Book this package" : "Request a quote")</a>
+                </article>
+            }
+        </div>
+    </section>
+
+    @* ---------- Reviews ---------- *@
+    @{
+        var rv = Model.Reviews;
+        var starPct = (rv.Average / 5 * 100).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+    }
+    <section class="ab-section" id="reviews">
+        <div class="ab-section-head reveal">
+            <div>
+                <span class="ab-kicker">Reviews</span>
+                <h2>What clients say</h2>
+            </div>
+            @if (rv.Count > 0)
+            {
+                <div class="ab-rating-big" aria-label="Rated @rv.Average.ToString("0.0") out of 5 by @rv.Count verified clients">
+                    <b>@rv.Average.ToString("0.0")</b>
+                    <div>
+                        <span class="ab-stars" style="--pct:@starPct%"><i>★★★★★</i></span>
+                        <small>from @rv.Count verified client@(rv.Count == 1 ? "" : "s")</small>
                     </div>
                 </div>
-            </div>
+            }
         </div>
-    </div>
+
+        @if (rv.Count == 0)
+        {
+            <div class="ab-reviews-empty reveal">
+                <span class="ab-stars" style="--pct:0%"><i>★★★★★</i></span>
+                <p>No reviews yet. Clients can leave a review from their booking receipt after their session.</p>
+            </div>
+        }
+        else
+        {
+            <div class="ab-reviews">
+                <aside class="ab-reviews-side reveal">
+                    <div class="ab-breakdown">
+                        @for (int n = 5; n >= 1; n--)
+                        {
+                            var c = rv.Breakdown.TryGetValue(n, out var v) ? v : 0;
+                            <div class="ab-bar-row">
+                                <span>@n ★</span>
+                                <span class="ab-bar"><i style="width:@(rv.Count == 0 ? 0 : c * 100 / rv.Count)%"></i></span>
+                                <span class="ab-bar-count">@c</span>
+                            </div>
+                        }
+                    </div>
+                    @if (rv.TopTags.Any())
+                    {
+                        <h3>What clients liked</h3>
+                        <div class="ab-liked">
+                            @foreach (var tag in rv.TopTags)
+                            {
+                                <span>@tag.Key <b>@tag.Value</b></span>
+                            }
+                        </div>
+                    }
+                </aside>
+
+                <div class="ab-review-list">
+                    @foreach (var (r, i) in rv.Latest.Select((r, i) => (r, i)))
+                    {
+                        <article class="ab-review reveal" style="--d:@(i * 80)ms">
+                            <header>
+                                <span class="ab-stars sm" style="--pct:@(r.Rating * 20)%" aria-label="@r.Rating out of 5 stars"><i>★★★★★</i></span>
+                                <time datetime="@r.CreatedAt.ToString("yyyy-MM-dd")">@Ui.Local(r.CreatedAt).ToString("MMM yyyy")</time>
+                            </header>
+                            @if (!string.IsNullOrWhiteSpace(r.Comment))
+                            {
+                                <p>“@r.Comment”</p>
+                            }
+                            @if (r.TagList.Any())
+                            {
+                                <div class="ab-review-tags">@foreach (var tag in r.TagList) { <span>@tag</span> }</div>
+                            }
+                            <footer>
+                                <b>@r.DisplayName</b>
+                                <span>@r.Category</span>
+                                <span class="ab-verified" title="Left from a real, completed booking">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="m5 12 5 5L20 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                    Verified client
+                                </span>
+                            </footer>
+                        </article>
+                    }
+                </div>
+            </div>
+        }
+    </section>
+
+    @* ---------- Closing CTA ---------- *@
+    <section class="ab-final reveal">
+        @if (Model.CoverImages.Count > 1)
+        {
+            <div class="ab-final-bg" style="background-image:url('@Model.CoverImages[1]')" aria-hidden="true"></div>
+        }
+        <div class="ab-final-inner">
+            <span class="ab-kicker">Your date is waiting</span>
+            <h2>Let's create something <em>timeless</em>.</h2>
+            <p>Pick an open date, choose a package and secure your slot with a 50% GCash down payment.</p>
+            <a class="ab-btn ab-btn-gold" data-iris href="/photographer/@Model.Slug/schedule">Book a session</a>
+        </div>
+    </section>
+
+    <footer class="ab-foot">&copy; @DateTime.Now.Year @Model.Name · VibeShoot · <a href="/privacy" style="color:inherit;">Privacy Notice</a></footer>
 </div>
+
+@section Scripts {
+    <script src="~/js/About.js" asp-append-version="true"></script>
+}

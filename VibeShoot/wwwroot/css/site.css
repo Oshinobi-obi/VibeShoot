@@ -29,3 +29,15 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+/* No visible scrollbars anywhere (pages still scroll with wheel, touch and keyboard). */
+html, body, * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+    *::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }

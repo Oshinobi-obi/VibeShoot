@@ -1,7 +1,5 @@
 @model VibeShoot.Models.NavContext
 
-<link rel="stylesheet" href="~/css/Navbar.css" asp-append-version="true" />
-
 <nav class="vs-navbar">
     <a class="vs-nav-brand" href="/photographers">VibeShoot</a>
     <div class="vs-nav-links">
@@ -12,7 +10,7 @@
         <a class="vs-nav-link @(Model.ActiveTab == "Schedule" ? "active" : "")"
            href="/photographer/@Model.Slug/schedule">Schedule</a>
     </div>
-    <span></span>
+    <a class="vs-nav-track" data-iris href="/booking/track">Track booking</a>
 </nav>
 
 <div class="vs-nav-iris" id="navIris" aria-hidden="true"></div>

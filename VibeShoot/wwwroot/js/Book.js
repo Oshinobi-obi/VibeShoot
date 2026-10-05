@@ -1,383 +1,412 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
+    'use strict';
 
-    const currentPhotographerSlug = window.currentPhotographerSlug || "ginger-snaps";
-    let scheduleData = { bookings: [], blockedDates: [] };
+    var cfg = window.vsBooking || { slug: '', packages: [] };
+    var OPEN_HOUR = 8, CLOSE_HOUR = 20, PREP_HOURS = 2;
+    var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    var DOWS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var HOLIDAYS = { '01-01': "New Year's", '12-25': 'Christmas', '12-31': 'NYE' };
+    var CATEGORY_ORDER = ['Birthday', 'Baptism', 'Photoshoot', 'Wedding'];
 
-    const qrCodePaths = {
-        "ginger-snaps": "/Uploads/QRCodes/GingerSnaps/GSGCash.png",
-        "chiyos-folder": "/Uploads/QRCodes/ChiyosFolder/CFGCash.png",
-        "sulyap-films": "/Uploads/QRCodes/SulyapFilms/SFGCash.png"
-    };
+    var $ = function (id) { return document.getElementById(id); };
+    var peso = function (n) { return '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+    var iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+    var fmtHour = function (h) { return (h % 12 || 12) + ':00 ' + (h >= 12 ? 'PM' : 'AM'); };
+    var escapeHtml = function (t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
+    var toHours = function (hhmm) { var p = hhmm.split(':'); return Number(p[0]) + Number(p[1]) / 60; };
 
-    // 1. Generate 1-Hour Time Slots (With explicit dark styling to prevent white backgrounds)
-    const timeSlotInput = document.getElementById('timeSlotInput');
-    const endTimeDisplay = document.getElementById('endTimeDisplay');
-    const endTimeInput = document.getElementById('endTimeInput');
+    // ------------------------------------------------------------ Calendar
+    var schedule = { days: {}, blocked: [], maxPerDay: 2 };
+    var view = new Date(); view.setDate(1);
+    var minMonth = new Date(view);
+    var todayIso = iso(new Date());
 
-    if (timeSlotInput) {
-        for (let h = 8; h <= 20; h++) {
-            let ampm = h >= 12 ? 'PM' : 'AM';
-            let dispH = h % 12 || 12;
-            let valH = String(h).padStart(2, '0');
-
-            let option = document.createElement('option');
-            option.value = `${valH}:00`;
-            option.text = `${dispH}:00 ${ampm}`;
-            option.style.background = "#161619"; // Forces dark background on dropdown items
-            option.style.color = "white";
-            timeSlotInput.appendChild(option);
-        }
-        timeSlotInput.addEventListener('change', calculateEndTime);
+    var lastSchedule = '';
+    function load() {
+        fetch('/photographer/' + encodeURIComponent(cfg.slug) + '/api/schedule', { cache: 'no-store' })
+            .then(function (r) { return r.text(); })
+            .then(function (text) {
+                if (text === lastSchedule) return;          // nothing changed since the last check
+                lastSchedule = text;
+                schedule = JSON.parse(text);
+                renderCalendar();
+                // Booking window open: refresh the time slots too (a slot someone just took gets crossed out).
+                if (state.date && wizard.classList.contains('open') && state.step === 0) { renderSlots(); updateSummary(); }
+            })
+            .catch(function () { if (!lastSchedule) renderCalendar(); });
     }
 
-    // 2. Package Definitions
-    const allPackages = {
-        "ginger-snaps": {
-            "Birthday": [
-                { id: "bday-basic", name: "Basic Package", price: "₱2,999", duration: 3, details: ["1 Photographer", "1 Assistant", "2-3hrs. Photo Coverage", "Unlimited Shots", "150 minimum Photos", "7-9 Days Editing Process"] },
-                { id: "bday-combo", name: "Combo Package", price: "₱6,499", duration: 3, details: ["1 Photographer, 1 Videographer, 1 Assistant", "2-3hrs. Photo & Video Coverage", "Unlimited Shots", "3-5 min. Video Highlights", "150 minimum Photos", "7-9 Days Editing Process"] }
-            ],
-            "Baptism": [
-                { id: "bap-basic", name: "Basic Package", price: "₱2,999", duration: 3, details: ["1 Photographer", "1 Assistant", "2-3hrs. Photo Coverage", "Unlimited Shots", "150 minimum Photos", "7-9 Days Editing Process"] },
-                { id: "bap-combo", name: "Combo Package", price: "₱6,499", duration: 3, details: ["1 Photographer, 1 Videographer, 1 Assistant", "2-3hrs. Photo & Video Coverage", "Unlimited Shots", "3-5 min. Video Highlights", "150 minimum Photos", "7-9 Days Editing Process"] }
-            ],
-            "Photoshoot": [
-                { id: "photo-classic", name: "Classic Package", price: "₱3,499", duration: 2, details: ["1 Photographer", "1 Assistant", "1 Location", "2hrs. Photo Session", "Unlimited Shots", "50 minimum Composed Edited Photos", "1-2 Weeks Editing Process"] },
-                { id: "photo-deluxe", name: "Deluxe Package", price: "₱7,499", duration: 2, details: ["1 Photographer, 1 Videographer, 1 Assistant", "1 Location", "2hrs. Photo & Video Session", "Unlimited Shots", "2-4 min. Video Shoot", "50 minimum Composed Edited Photos", "1-2 Weeks Editing Process"] }
-            ],
-            "Wedding": [
-                { id: "wed-tbd", name: "Wedding Package", price: "Custom", duration: 5, details: ["Packages for Weddings are currently custom tailored.", "Please submit this form and we will contact you for a quote!"] }
-            ]
-        },
-        "chiyos-folder": {
-            "Birthday": [{ id: "cf-tbd", name: "Package Details", price: "TBD", duration: 3, details: ["Details coming soon!"] }],
-            "Baptism": [{ id: "cf-tbd", name: "Package Details", price: "TBD", duration: 3, details: ["Details coming soon!"] }],
-            "Photoshoot": [{ id: "cf-tbd", name: "Package Details", price: "TBD", duration: 3, details: ["Details coming soon!"] }],
-            "Wedding": [{ id: "cf-tbd", name: "Package Details", price: "TBD", duration: 5, details: ["Details coming soon!"] }]
-        },
-        "sulyap-films": {
-            "Birthday": [{ id: "sf-tbd", name: "Package Details", price: "TBD", duration: 3, details: ["Details coming soon!"] }],
-            "Baptism": [{ id: "sf-tbd", name: "Package Details", price: "TBD", duration: 3, details: ["Details coming soon!"] }],
-            "Photoshoot": [{ id: "sf-tbd", name: "Package Details", price: "TBD", duration: 3, details: ["Details coming soon!"] }],
-            "Wedding": [{ id: "sf-tbd", name: "Package Details", price: "TBD", duration: 5, details: ["Details coming soon!"] }]
-        }
-    };
-    const currentPackages = allPackages[currentPhotographerSlug] || allPackages["ginger-snaps"];
+    // Live availability: re-check every 5 seconds while the page is visible.
+    setInterval(function () { if (!document.hidden) load(); }, 5000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) load(); });
 
-    // 3. Dynamic End Time Calculator
-    function calculateEndTime() {
-        const timeVal = timeSlotInput.value;
-        const selectedRadio = document.querySelector('input[name="SelectedPackage"]:checked');
-
-        if (timeVal && selectedRadio) {
-            const duration = parseInt(selectedRadio.getAttribute('data-duration')) || 2;
-            const [h, m] = timeVal.split(':').map(Number);
-
-            let endH = h + duration;
-
-            // Database formatting (24 hr)
-            endTimeInput.value = `${String(endH).padStart(2, '0')}:00`;
-
-            // Visual formatting (12 hr)
-            let ampm = endH >= 12 && endH < 24 ? 'PM' : 'AM';
-            let dispH = endH % 12 || 12;
-            endTimeDisplay.value = `${dispH}:00 ${ampm}`;
-        } else {
-            endTimeInput.value = "";
-            endTimeDisplay.value = "";
-        }
+    function dayState(key) {
+        if (key <= todayIso) return 'past';
+        if (schedule.blocked.indexOf(key) >= 0) return 'off';
+        var d = schedule.days[key];
+        if (!d) return 'avail';
+        if (d.count >= schedule.maxPerDay) return 'full';
+        return 'few';
     }
 
-    const phoneInput = document.getElementById('contactNumberInput');
-    phoneInput.addEventListener('input', function (e) {
-        let numbers = e.target.value.replace(/\D/g, '');
-        let match = numbers.match(/(\d{0,4})(\d{0,3})(\d{0,4})/);
-        if (!match[2]) e.target.value = match[1];
-        else e.target.value = match[1] + '-' + match[2] + (match[3] ? '-' + match[3] : '');
-    });
+    function renderCalendar() {
+        var grid = $('calGrid');
+        $('monthTitle').textContent = MONTHS[view.getMonth()] + ' ' + view.getFullYear();
+        $('prevMonth').disabled = view <= minMonth;
+        grid.innerHTML = '';
+        DOWS.forEach(function (d) { var el = document.createElement('div'); el.className = 'vs-cal-dow'; el.textContent = d; grid.appendChild(el); });
 
-    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const holidays = { "01-01": "New Year's", "12-25": "Christmas", "12-31": "NYE" };
+        for (var i = 0; i < view.getDay(); i++) grid.appendChild(document.createElement('span'));
 
-    const today = new Date();
-    let currentMonth = today.getMonth();
-    let currentYear = today.getFullYear();
-    const grid = document.getElementById('calendarGrid');
-    const monthYearDisp = document.getElementById('monthYearDisplay');
-
-    async function fetchClientSchedule() {
-        try {
-            const response = await fetch(`/photographer/${currentPhotographerSlug}/api/schedule`);
-            scheduleData = await response.json();
-            renderCalendar(currentMonth, currentYear);
-        } catch (error) { console.error("Error fetching schedule:", error); }
-    }
-
-    function getStatusClass(year, month, day) {
-        const m = String(month + 1).padStart(2, '0');
-        const d = String(day).padStart(2, '0');
-        const dateString = `${year}-${m}-${d}`;
-
-        if (scheduleData.blockedDates.some(b => b.date.startsWith(dateString))) return 'status-blocked';
-
-        const dayBookings = scheduleData.bookings.filter(b => b.targetDate.startsWith(dateString));
-        if (dayBookings.length >= 2) return 'status-blocked';
-
-        if (dayBookings.length === 1) {
-            if (dayBookings[0].status === 'Pending') return 'status-pending';
-            if (dayBookings[0].status === 'Confirmed') return 'status-confirmed';
-        }
-        return 'status-available';
-    }
-
-    function renderCalendar(month, year) {
-        grid.innerHTML = "";
-        monthYearDisp.innerText = monthNames[month] + " " + year;
-
-        dayNames.forEach(day => {
-            const header = document.createElement('div');
-            header.className = 'vs-day-name';
-            header.innerText = day;
-            grid.appendChild(header);
-        });
-
-        const firstDay = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-        for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
-
-        for (let i = 1; i <= daysInMonth; i++) {
-            const cell = document.createElement('div');
-            const cellDate = new Date(year, month, i);
-            const isPast = cellDate.setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
-
-            let contentHTML = `<span class="vs-day-number">${i}</span>`;
-            const holidayKey = `${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-
-            if (isPast) {
-                cell.className = 'vs-day-cell disabled';
+        var days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+        for (var day = 1; day <= days; day++) {
+            var date = new Date(view.getFullYear(), view.getMonth(), day);
+            var key = iso(date);
+            var state = dayState(key);
+            var cell = document.createElement('button');
+            cell.type = 'button';
+            cell.className = 'vs-day ' + state + (key === todayIso ? ' today' : '');
+            var tag = { avail: 'Open', few: '1 left', full: 'Full', off: 'Off', past: '' }[state];
+            cell.innerHTML = '<span class="n">' + day + '</span><span class="dot"></span><span class="tag">' + tag + '</span>';
+            var hol = HOLIDAYS[key.slice(5)];
+            if (hol) { cell.classList.add('holiday'); cell.setAttribute('data-holiday', hol); }
+            cell.setAttribute('aria-label', date.toDateString() + ' — ' + ({ avail: 'available', few: 'one slot left', full: 'fully booked', off: 'unavailable', past: 'not bookable' }[state]));
+            if (state === 'avail' || state === 'few') {
+                (function (k) { cell.addEventListener('click', function () { openWizard(k); }); })(key);
             } else {
-                const statusClass = getStatusClass(year, month, i);
-                cell.className = `vs-day-cell ${statusClass}`;
-
-                if (statusClass === 'status-available' || statusClass === 'status-pending' || statusClass === 'status-confirmed') {
-                    cell.addEventListener('click', () => openModal(new Date(year, month, i)));
-                } else {
-                    cell.style.pointerEvents = 'none';
-                    cell.style.opacity = '0.5';
-                }
+                cell.disabled = true;
             }
-
-            if (holidays[holidayKey]) {
-                cell.classList.add('holiday');
-                contentHTML += `<span class="vs-holiday-label">${holidays[holidayKey]}</span>`;
-            }
-
-            cell.innerHTML = contentHTML;
             grid.appendChild(cell);
         }
     }
 
-    document.getElementById('prevMonth').addEventListener('click', () => { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderCalendar(currentMonth, currentYear); });
-    document.getElementById('nextMonth').addEventListener('click', () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(currentMonth, currentYear); });
+    $('prevMonth').addEventListener('click', function () { view.setMonth(view.getMonth() - 1); renderCalendar(); });
+    $('nextMonth').addEventListener('click', function () { view.setMonth(view.getMonth() + 1); renderCalendar(); });
 
-    fetchClientSchedule();
+    // ------------------------------------------------------------ Wizard state
+    var wizard = $('wizard');
+    var form = $('bookingForm');
+    var state = { date: null, category: null, pkg: null, start: null, step: 0, submitted: false };
+    var steps = document.querySelectorAll('.vs-step');
+    var categories = CATEGORY_ORDER.filter(function (c) { return cfg.packages.some(function (p) { return p.category === c; }); });
 
-    const modal = document.getElementById('bookingModal');
-    const selectedDateDisplay = document.getElementById('selectedDateDisplay');
-    const selectedDateInput = document.getElementById('selectedDateInput');
-    const categorySelect = document.getElementById('categorySelect');
-    const packagesWrapper = document.getElementById('packagesWrapper');
-    const packagesContainer = document.getElementById('packagesContainer');
-    const tcCheckbox = document.getElementById('tcCheckbox');
-    const submitBtn = document.getElementById('submitBtn');
-    const tcModal = document.getElementById('tcModal');
-
-    function openModal(dateObj) {
-        const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        selectedDateDisplay.innerText = "Target Date: " + formattedDate;
-        selectedDateInput.value = formattedDate;
-
-        document.getElementById('bookingForm').reset();
-        timeSlotInput.value = '';
-        endTimeDisplay.value = '';
-        endTimeInput.value = '';
-        packagesWrapper.style.display = 'none';
-        packagesContainer.innerHTML = '';
-        tcCheckbox.checked = false;
-        submitBtn.disabled = true;
-
-        modal.classList.add('open');
+    function openWizard(dateKey) {
+        if (state.submitted) resetWizard();
+        state.date = dateKey;
+        $('fDate').value = dateKey;
+        if (!state.category && categories.length) state.category = categories[0];
+        renderCategories();
+        renderPackages();
+        renderSlots();
+        goTo(0);
+        updateSummary();
+        wizard.classList.add('open');
+        document.body.style.overflow = 'hidden';
     }
 
-    document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('open'));
+    function closeWizard() {
+        wizard.classList.remove('open');
+        document.body.style.overflow = '';
+        if (state.submitted) { resetWizard(); load(); }
+    }
 
-    categorySelect.addEventListener('change', function () {
-        const cat = this.value;
-        packagesContainer.innerHTML = '';
+    // Closing halfway through (details typed in, not yet sent): make sure it's on purpose.
+    function requestClose() {
+        if (state.submitted || state.step === 0 || !window.vsModal) { closeWizard(); return; }
+        vsModal.confirm({
+            title: 'Discard this booking?',
+            message: 'Your details for ' + new Date(state.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) + " haven't been sent yet. If you close now, you'll need to start again.",
+            ok: 'Discard', cancel: 'Keep booking', variant: 'danger'
+        }).then(function (yes) { if (yes) closeWizard(); });
+    }
 
-        if (currentPackages[cat]) {
-            currentPackages[cat].forEach((pkg, index) => {
-                const bulletsHTML = pkg.details.map(d => `<li>${d}</li>`).join('');
-                const pureNumberPrice = pkg.price.replace(/[^\d]/g, '');
+    function resetWizard() {
+        form.reset();
+        state = { date: null, category: categories[0] || null, pkg: null, start: null, step: 0, submitted: false };
+        $('dropContent').innerHTML = '<b>Upload GCash receipt *</b>Tap to choose a screenshot, or drop it here';
+        $('wzFoot').style.display = '';
+    }
 
-                const card = document.createElement('label');
-                card.className = 'vs-package-card';
-                card.innerHTML = `
-                    <div class="vs-package-header">
-                        <div style="display:flex; align-items:center; gap: 8px;">
-                            <input type="radio" name="SelectedPackage" value="${pkg.name}" data-price="${pureNumberPrice}" data-duration="${pkg.duration}" required ${index === 0 ? 'checked' : ''} style="width: auto; margin:0;" />
-                            <span class="vs-package-name">${pkg.name}</span>
-                        </div>
-                        <span class="vs-package-price">${pkg.price}</span>
-                    </div>
-                    <ul class="vs-package-bullets">${bulletsHTML}</ul>
-                `;
+    wizard.addEventListener('click', function (e) {
+        if (e.target === wizard || e.target.closest('[data-close]')) requestClose();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        if ($('termsModal').classList.contains('open')) $('termsModal').classList.remove('open');
+        else if (wizard.classList.contains('open') && !document.querySelector('.vsm-backdrop')) requestClose();
+    });
 
-                card.querySelector('input').addEventListener('change', function () {
-                    document.querySelectorAll('.vs-package-card').forEach(c => c.classList.remove('selected'));
-                    if (this.checked) card.classList.add('selected');
-                    calculateEndTime();
-                });
-
-                if (index === 0) card.classList.add('selected');
-                packagesContainer.appendChild(card);
+    function renderCategories() {
+        var host = $('catChips');
+        host.innerHTML = '';
+        categories.forEach(function (c) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'vs-chip' + (c === state.category ? ' on' : '');
+            b.textContent = c;
+            b.addEventListener('click', function () {
+                state.category = c;
+                state.pkg = null;
+                renderCategories(); renderPackages(); renderSlots(); updateSummary();
             });
-            packagesWrapper.style.display = 'block';
-            calculateEndTime(); // Recalculate immediately when category changes
+            host.appendChild(b);
+        });
+    }
+
+    function renderPackages() {
+        var host = $('pkgList');
+        host.innerHTML = '';
+        var list = cfg.packages.filter(function (p) { return p.category === state.category; });
+        if (!state.pkg && list.length) state.pkg = list[0];
+        list.forEach(function (p) {
+            var card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'vs-pkg' + (state.pkg && state.pkg.id === p.id ? ' on' : '');
+            var items = p.inclusions.map(function (i) { var li = document.createElement('li'); li.textContent = i; return li.outerHTML; }).join('');
+            var name = document.createElement('b'); name.textContent = p.name;
+            var badge = p.discountBadge ? '<span class="vs-pkg-promo">' + escapeHtml(p.discountLabel || p.discountBadge) + '</span>' : '';
+            var was = p.discountBadge ? '<s>' + peso(p.originalPrice).replace('.00', '') + '</s> ' : '';
+            card.innerHTML = badge + name.outerHTML +
+                '<div class="price">' + was + (p.price > 0 ? peso(p.price).replace('.00', '') : 'Custom quote') + '</div>' +
+                '<div class="dur">' + p.hours + '-hour coverage' + (p.price > 0 ? ' · 50% down payment: ' + peso(p.price / 2) : '') + '</div>' +
+                '<ul>' + items + '</ul>';
+            card.addEventListener('click', function () {
+                state.pkg = p;
+                renderPackages(); renderSlots(); updateSummary();
+            });
+            host.appendChild(card);
+        });
+        $('fPackage').value = state.pkg ? state.pkg.id : '';
+    }
+
+    function renderSlots() {
+        var host = $('slotList');
+        host.innerHTML = '';
+        if (!state.pkg) return;
+        var dur = state.pkg.hours;
+        var sessions = (schedule.days[state.date] && schedule.days[state.date].sessions) || [];
+        var anyFree = false;
+
+        for (var h = OPEN_HOUR; h + dur <= CLOSE_HOUR; h++) {
+            var start = h, end = h + dur;
+            var clash = sessions.some(function (s) {
+                var ss = toHours(s.start), se = toHours(s.end);
+                return !(start >= se + PREP_HOURS || end + PREP_HOURS <= ss);
+            });
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'vs-slot';
+            var value = String(h).padStart(2, '0') + ':00';
+            if (state.start === value && !clash) b.classList.add('on');
+            b.innerHTML = fmtHour(h) + '<small>until ' + fmtHour(end) + '</small>';
+            b.disabled = clash;
+            if (!clash) anyFree = true;
+            (function (v) {
+                b.addEventListener('click', function () { state.start = v; renderSlots(); updateSummary(); });
+            })(value);
+            host.appendChild(b);
         }
-    });
+        if (state.start && !host.querySelector('.vs-slot.on')) state.start = null;
+        $('fStart').value = state.start || '';
+        $('slotHelp').textContent = anyFree
+            ? 'Operating hours 8:00 AM – 8:00 PM. Crossed-out times are too close to another session (2-hour prep interval).'
+            : 'No start times fit this package on this date. Try a shorter package or another day.';
+    }
 
-    tcCheckbox.addEventListener('click', function (e) {
-        if (this.checked) { e.preventDefault(); tcModal.classList.add('open'); }
-        else { submitBtn.disabled = true; }
-    });
-
-    document.getElementById('openTcModal').addEventListener('click', function (e) { e.preventDefault(); tcModal.classList.add('open'); });
-    document.getElementById('btnAgree').addEventListener('click', function () { tcCheckbox.checked = true; submitBtn.disabled = false; tcModal.classList.remove('open'); });
-    document.getElementById('btnDecline').addEventListener('click', function () { tcCheckbox.checked = false; submitBtn.disabled = true; tcModal.classList.remove('open'); });
-
-    const bookingForm = document.getElementById('bookingForm');
-    const notifModal = document.getElementById('paymentNotifModal');
-    const qrModal = document.getElementById('qrModal');
-    const uploadModal = document.getElementById('uploadModal');
-    const receiptModal = document.getElementById('receiptModal');
-    let timerInterval;
-
-    document.getElementById('btnProceedToQr').addEventListener('click', function () {
-        const timeVal = timeSlotInput.value;
-        if (!timeVal) {
-            alert("Please select your preferred Start Time.");
-            return;
+    function updateSummary() {
+        var d = state.date ? new Date(state.date + 'T00:00:00') : null;
+        $('sumDate').firstChild.textContent = d ? d.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' }) : '—';
+        $('sumTime').textContent = state.start && state.pkg ? fmtHour(toHours(state.start)) + ' – ' + fmtHour(toHours(state.start) + state.pkg.hours) : 'Choose a time';
+        $('sumCat').textContent = state.category || '—';
+        $('sumPkg').textContent = state.pkg ? state.pkg.name : '—';
+        $('sumDur').textContent = state.pkg ? state.pkg.hours + ' hours' : '—';
+        var price = state.pkg ? state.pkg.price : 0;
+        var hasDiscount = !!(state.pkg && state.pkg.discountBadge);
+        $('sumRegularRow').hidden = !hasDiscount;
+        $('sumDiscountRow').hidden = !hasDiscount;
+        if (hasDiscount) {
+            $('sumRegular').textContent = peso(state.pkg.originalPrice);
+            $('sumDiscountLabel').textContent = state.pkg.discountLabel || ('Discount (' + state.pkg.discountBadge.toLowerCase() + ')');
+            $('sumDiscount').textContent = '- ' + peso(state.pkg.originalPrice - price);
         }
+        $('sumPrice').textContent = state.pkg ? (price > 0 ? peso(price) : 'Custom quote') : '—';
+        $('sumDue').textContent = state.pkg ? (price > 0 ? peso(price / 2) : '₱0.00') : '—';
+        $('payAmount').textContent = peso(price / 2);
+        $('wzTitle').textContent = d ? 'Book ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Book your session';
+    }
 
-        notifModal.classList.remove('open');
-        qrModal.classList.add('open');
+    // ------------------------------------------------------------ Step navigation
+    function isQuote() { return state.pkg && state.pkg.price <= 0; }
 
-        const selectedRadio = document.querySelector('input[name="SelectedPackage"]:checked');
-        if (selectedRadio) {
-            const fullPrice = parseFloat(selectedRadio.getAttribute('data-price')) || 0;
-            if (fullPrice > 0) {
-                document.getElementById('qrAmountDisplay').innerText = "₱" + (fullPrice / 2).toLocaleString('en-US', { minimumFractionDigits: 2 });
-            } else {
-                document.getElementById('qrAmountDisplay').innerText = "Custom / TBD";
-            }
+    function goTo(step) {
+        state.step = step;
+        steps.forEach(function (s) { s.classList.toggle('active', Number(s.getAttribute('data-step')) === step); });
+        document.querySelectorAll('#stepper > div').forEach(function (el, i) {
+            el.classList.toggle('done', i < step);
+            el.classList.toggle('cur', i === step);
+        });
+        $('btnBack').style.visibility = step === 0 ? 'hidden' : 'visible';
+        $('btnNext').innerHTML = step === 2 ? (isQuote() ? 'Submit request' : 'Submit booking') : 'Continue';
+        $('payOnline').style.display = isQuote() ? 'none' : '';
+        $('payQuote').style.display = isQuote() ? '' : 'none';
+        $('wzError').textContent = '';
+        $('wzFoot').style.display = step === 3 ? 'none' : '';
+        document.querySelector('.vs-wz-body').scrollTop = 0;
+    }
+
+    function fail(msg, fieldId) {
+        $('wzError').textContent = msg;
+        if (fieldId) {
+            var f = $(fieldId);
+            f.closest('.vs-field') && f.closest('.vs-field').classList.add('invalid');
+            f.focus();
         }
+        return false;
+    }
 
-        document.getElementById('gcashQrImage').src = qrCodePaths[currentPhotographerSlug] || "/GCash/GingerSnaps/GSGCash.png";
-
-        const btnAlreadyPaid = document.getElementById('btnAlreadyPaid');
-        const qrTimerText = document.getElementById('qrTimerText');
-        const qrTimeDisplay = document.getElementById('qrTime');
-
-        btnAlreadyPaid.style.display = 'none';
-        qrTimerText.style.display = 'block';
-        let timeLeft = 5;
-        qrTimeDisplay.innerText = timeLeft;
-
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            qrTimeDisplay.innerText = timeLeft;
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                qrTimerText.style.display = 'none';
-                btnAlreadyPaid.style.display = 'inline-block';
-            }
-        }, 1000);
-    });
-
-    bookingForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        modal.classList.remove('open');
-        notifModal.classList.add('open');
-    });
-
-    document.getElementById('btnAlreadyPaid').addEventListener('click', function () {
-        qrModal.classList.remove('open');
-        uploadModal.classList.add('open');
-    });
-
-    document.getElementById('btnSubmitReceipt').addEventListener('click', function () {
-        const receiptFile = document.getElementById('receiptFile');
-        if (!receiptFile.files || receiptFile.files.length === 0) {
-            alert("Please upload your GCash receipt screenshot first.");
-            return;
+    function validate(step) {
+        document.querySelectorAll('.vs-field.invalid').forEach(function (el) { el.classList.remove('invalid'); });
+        if (step === 0) {
+            if (!state.pkg) return fail('Please choose a package.');
+            if (!state.start) return fail('Please choose a start time.');
         }
-
-        document.getElementById('formReceiptFile').files = receiptFile.files;
-
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const randomDigits = Math.floor(10000000 + Math.random() * 90000000);
-        const txId = dateStr + randomDigits;
-
-        document.getElementById('recTxId').innerText = txId;
-        document.getElementById('formTxId').value = txId;
-
-        document.getElementById('recName').innerText = document.getElementById('inputFullName').value;
-        document.getElementById('recVenue').innerText = document.getElementById('inputVenue').value;
-        document.getElementById('recCategory').innerText = categorySelect.value;
-
-        const timeVal = timeSlotInput.value;
-        const [h, m] = timeVal.split(':').map(Number);
-        let ampm = h >= 12 ? 'PM' : 'AM';
-        let dispH = h % 12 || 12;
-        let finalStartTime = `${dispH}:00 ${ampm}`;
-
-        document.getElementById('recTime').innerText = `${finalStartTime} to ${endTimeDisplay.value}`;
-
-        const selectedRadio = document.querySelector('input[name="SelectedPackage"]:checked');
-        if (selectedRadio) {
-            document.getElementById('recPackage').innerText = selectedRadio.value;
-            const fullPrice = parseFloat(selectedRadio.getAttribute('data-price')) || 0;
-            if (fullPrice > 0) {
-                document.getElementById('recAmount').innerText = "₱" + (fullPrice / 2).toLocaleString('en-US', { minimumFractionDigits: 2 });
-                document.getElementById('formAmountPaid').value = fullPrice / 2;
-            } else {
-                document.getElementById('recAmount').innerText = "Custom";
-                document.getElementById('formAmountPaid').value = 0;
-            }
+        if (step === 1) {
+            if (!$('fName').value.trim()) return fail('Please enter your full name.', 'fName');
+            if (!/^09\d{9}$/.test($('fMobile').value.replace(/\D/g, ''))) return fail('Enter a valid mobile number (09XX-XXX-XXXX).', 'fMobile');
+            if ($('fEmail').value && !$('fEmail').checkValidity()) return fail('Please check your email address.', 'fEmail');
+            if (!$('fVenue').value.trim()) return fail('Please enter the venue.', 'fVenue');
+            if (!$('fTerms').checked) return fail('Please accept the Terms & Conditions.');
         }
+        if (step === 2 && !isQuote()) {
+            if (!/^\d{8,20}$/.test($('fRef').value.replace(/\s/g, ''))) return fail('Enter the GCash reference number (digits only).', 'fRef');
+            if (!$('fReceipt').files.length) return fail('Please upload your GCash receipt screenshot.');
+        }
+        return true;
+    }
 
-        uploadModal.classList.remove('open');
-        receiptModal.classList.add('open');
+    $('btnBack').addEventListener('click', function () { if (state.step > 0) goTo(state.step - 1); });
+    $('btnNext').addEventListener('click', function () {
+        if (!validate(state.step)) return;
+        if (state.step < 2) { goTo(state.step + 1); return; }
+        if (!window.vsModal) { submit(); return; }
+
+        // Last chance to check everything before it's sent.
+        var d = new Date(state.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        var time = fmtHour(toHours(state.start)) + ' - ' + fmtHour(toHours(state.start) + state.pkg.hours);
+        var lines = d + ', ' + time + '\n' + state.category + ' - ' + state.pkg.name;
+        vsModal.confirm(isQuote()
+            ? { title: 'Send your request?', message: lines + '\n\nThe photographer will contact you with a quotation.', ok: 'Send request' }
+            : { title: 'Submit your booking?', message: lines + '\nDown payment sent: ' + peso(state.pkg.price / 2) + ' (GCash ref ' + $('fRef').value.replace(/\s/g, '') + ')\n\nThe photographer will verify your payment and confirm your slot.', ok: 'Submit booking' }
+        ).then(function (yes) { if (yes) submit(); });
     });
 
-    document.getElementById('btnDownloadReceipt').addEventListener('click', function () {
-        const btn = this;
-        btn.innerText = "Downloading Receipt...";
+    function submit() {
+        var btn = $('btnNext');
         btn.disabled = true;
+        btn.innerHTML = '<span class="spin"></span>Sending…';
 
-        const elementToPrint = document.getElementById('receiptContent');
-        const opt = {
-            margin: 0, filename: 'VibeShoot_Booking_Receipt.pdf',
-            image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2 },
-            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-        };
+        var data = new FormData(form);
+        data.set('AcceptedTerms', $('fTerms').checked ? 'true' : 'false');
+        if (isQuote()) { data.delete('ReceiptImage'); data.delete('ReferenceNumber'); }
 
-        html2pdf().set(opt).from(elementToPrint).save().then(() => {
-            btn.innerText = "Receipt Downloaded!";
-            setTimeout(() => { document.getElementById('bookingForm').submit(); }, 1500);
+        // Shrink the GCash screenshot first so the upload (and the database) stays small.
+        var receipt = !isQuote() && $('fReceipt').files[0];
+        var ready = receipt && window.vsShrinkImage
+            ? window.vsShrinkImage(receipt).then(function (f) { data.set('ReceiptImage', f, f.name); })
+            : Promise.resolve();
+
+        ready.then(function () {
+            return fetch('/photographer/' + encodeURIComponent(cfg.slug) + '/api/book', {
+                method: 'POST',
+                body: data,
+                headers: { 'RequestVerificationToken': form.querySelector('input[name="__RequestVerificationToken"]').value }
+            });
+        })
+            .then(function (r) { return r.json().catch(function () { return { ok: false, error: 'Something went wrong. Please try again.' }; }); })
+            .then(function (res) {
+                btn.disabled = false;
+                if (!res.ok) {
+                    goTo(state.step);
+                    $('wzError').textContent = res.error || 'Booking failed. Please try again.';
+                    if (window.vsModal) vsModal.notice({ title: "Booking not sent", message: res.error || 'Booking failed. Please try again.', variant: 'error' });
+                    return;
+                }
+                state.submitted = true;
+                $('doneTx').textContent = res.transactionId;
+
+                // Sound + remember the booking so this browser can announce the confirmation later.
+                if (window.vsSound) window.vsSound(isQuote() ? 'quote-sent' : 'booking-sent');
+                var token = decodeURIComponent((res.receiptUrl.split('t=')[1] || '').split('&')[0]);
+                if (window.vsRememberBooking) window.vsRememberBooking(res.transactionId, token, 'Pending');
+                var canAsk = window.vsNotifySupported && window.vsNotifySupported() && Notification.permission === 'default';
+                $('notifyCard').hidden = !canAsk;
+                if (window.vsNotifySupported && window.vsNotifySupported() && Notification.permission === 'granted') window.vsAskNotifications();
+                $('receiptLink').href = res.receiptUrl;
+                $('doneText').textContent = isQuote()
+                    ? 'Your request is in! The photographer will reach out with a quotation for your custom package.'
+                    : 'Your booking is now pending. The photographer will verify your GCash payment and confirm your slot.';
+                goTo(3);
+            })
+            .catch(function () {
+                btn.disabled = false;
+                goTo(state.step);
+                $('wzError').textContent = 'Network error — please check your connection and try again.';
+            });
+    }
+
+    // ------------------------------------------------------------ Inputs
+    $('fMobile').addEventListener('input', function (e) {
+        var n = e.target.value.replace(/\D/g, '').slice(0, 11);
+        e.target.value = n.length > 7 ? n.slice(0, 4) + '-' + n.slice(4, 7) + '-' + n.slice(7) : n.length > 4 ? n.slice(0, 4) + '-' + n.slice(4) : n;
+    });
+
+    var drop = $('dropZone');
+    var fileInput = $('fReceipt');
+    function showReceipt() {
+        var f = fileInput.files[0];
+        if (!f) return;
+        if (!/^image\//.test(f.type)) { fileInput.value = ''; $('wzError').textContent = 'Please choose an image file.'; return; }
+        var img = document.createElement('img');
+        img.src = URL.createObjectURL(f);
+        img.alt = 'Receipt preview';
+        var label = document.createElement('b');
+        label.textContent = f.name;
+        $('dropContent').innerHTML = '';
+        $('dropContent').appendChild(img);
+        $('dropContent').appendChild(label);
+        $('dropContent').appendChild(document.createTextNode('Tap to change'));
+    }
+    fileInput.addEventListener('change', showReceipt);
+    ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('drag'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('drag'); }); });
+    drop.addEventListener('drop', function (e) { if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; showReceipt(); } });
+
+    function copy(text, btn) {
+        if (navigator.clipboard) navigator.clipboard.writeText(text);
+        var old = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(function () { btn.textContent = old; }, 1400);
+    }
+    $('copyAmount').addEventListener('click', function () { copy(state.pkg ? (state.pkg.price / 2).toFixed(2) : '', this); });
+    $('copyTx').addEventListener('click', function () { copy($('doneTx').textContent, this); });
+    $('btnNotify').addEventListener('click', function () {
+        var btn = this;
+        window.vsAskNotifications().then(function (ok) {
+            $('notifyCard').innerHTML = ok
+                ? '<span><b>Notifications are on.</b> Keep VibeShoot open in a tab and we will let you know.</span>'
+                : '<span>Notifications are blocked in your browser. You can still check your status anytime on Track Booking.</span>';
         });
     });
+
+    // ------------------------------------------------------------ Terms
+    var terms = $('termsModal');
+    $('openTerms').addEventListener('click', function (e) { e.preventDefault(); terms.classList.add('open'); });
+    $('fTerms').addEventListener('click', function (e) {
+        if (this.checked) { e.preventDefault(); terms.classList.add('open'); }
+    });
+    $('termsAgree').addEventListener('click', function () { $('fTerms').checked = true; terms.classList.remove('open'); $('wzError').textContent = ''; });
+    $('termsDecline').addEventListener('click', function () { $('fTerms').checked = false; terms.classList.remove('open'); });
+    terms.addEventListener('click', function (e) { if (e.target === terms) terms.classList.remove('open'); });
+
+    load();
 });
